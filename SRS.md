@@ -227,4 +227,4 @@ Cung cấp cái nhìn tổng quan và chi tiết về các yêu cầu chức nă
 
 ---
 
-> Tài liệu này được biên soạn dựa trên "TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM.pdf" và các công cụ hỗ trợ và chỉ mang tính chất tham khảo.
+> Tài liệu này được biên soạn dựa trên "TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM.pdf" cùng các công cụ hỗ trợ và chỉ mang tính chất tham khảo.
