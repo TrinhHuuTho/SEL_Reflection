@@ -1,6 +1,6 @@
 # Quy Tắc Viết Commit Message
 
-## Định Dạng: `<type>: <subject>`
+## Định Dạng: `<type>: <Jira ID> <subject>`
 
 ### Types
 
@@ -13,6 +13,12 @@
 - `chore` - Build process/tools
 - `perf` - Cải thiện hiệu suất
 
+### Jira ID
+
+- Format: `PROJ-123` (tên project viết hoa + số)
+- Bắt buộc nếu commit liên quan đến task/issue trong Jira
+- Có thể bỏ qua cho các commit đơn giản (docs, chore nhỏ)
+
 ### Subject Rules
 
 - Thì hiện tại, dạng mệnh lệnh: "add" không phải "added"
@@ -22,11 +28,21 @@
 
 ## Ví Dụ
 
+### Với Jira ID
+
 ```
-feat: add multiple choice question generation
-fix: resolve null pointer exception in validation
+feat: PROJ-123 add multiple choice question generation
+fix: PROJ-456 resolve null pointer exception in validation
+refactor: PROJ-789 improve database query performance
+perf: PROJ-234 optimize image loading
+```
+
+### Không có Jira ID (optional)
+
+```
 docs: update installation instructions
 chore: update fastapi to 0.104.0
+style: format code with prettier
 ```
 
 ## Quy Tắc
