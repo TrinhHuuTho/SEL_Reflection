@@ -1,13 +1,42 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Import font vui nhộn từ Google Fonts - Baloo 2 (Hỗ trợ Tiếng Việt cực tốt) */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+    /* Color Palette: "Creative Kids" */
+    --color-brand-bg: #E0F7FA;      /* Nền xanh nhạt dịu mắt */
+    --color-brand-primary: #FF6B6B; /* Đỏ san hô nổi bật (cho nút/điểm nhấn) */
+    --color-brand-secondary: #4ECDC4;/* Xanh ngọc (cho các element phụ) */
+    --color-brand-accent: #FFE66D;  /* Vàng tươi (cho sao/thưởng) */
+    --color-brand-text: #2D3748;    /* Màu chữ tối (dễ đọc) */
+    --color-brand-path: #A0C4FF;    /* Màu đường đi roadmap */
+  
+    /* Fonts */
+    --font-display: "Baloo 2", cursive; /* Font tròn, vui nhộn */
+
+    --animate-float: float 20s infinite linear;
+    --animate-sway: sway 3s infinite ease-in-out alternate;
+
+    @keyframes float {
+        0% { transform: translateX(-100px); }
+        50% { transform: translateX(20px); }
+        100% { transform: translateX(100px); }
+    }
+
+    @keyframes sway {
+        0% { transform: rotate(-2deg); }
+        100% { transform: rotate(2deg); }
+    }
+
+    @keyframes shine {
+        100% { left: 125%; }
+    }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  font-family: var(--font-display);
+  overflow-x: hidden; /* Tránh scroll ngang */
 }
