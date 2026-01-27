@@ -1,19 +1,20 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 
 const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
-    // Cấu hình bản đồ
+    // Cấu hình bản đồ ngang (Horizontal)
     const CONFIG = {
-        WIDTH: 400,       // Chiều rộng ảo của bản đồ
-        AMPLITUDE: 120,   // Độ rộng uốn lượn trái phải
-        GAP: 150,         // Khoảng cách giữa các điểm
-        START_Y: 80,
+        HEIGHT: 500,            // Chiều cao tổng
+        AMPLITUDE: 100,         // Độ uốn lượn
+        GAP: 200,               // Khoảng cách ngang
+        START_X: window.innerWidth / 2,           // Bắt đầu ở giữa màn hình
+        START_Y: 250,           // Trục giữa
     };
 
-    // --- CHARACTER ASSETS ---
-    // Đây là nơi bạn sẽ tích hợp Rive Component sau này.
-    // Hiện tại dùng tạm một div CSS animation.
+    const containerRef = useRef(null);
+
+    // --- CHARACTER ASSETS (Original Placeholder) ---
     const Character = () => (
-        <div className="w-32 h-32 relative -top-12 -left-4 z-50 pointer-events-none transition-all duration-500 ease-in-out">
+        <div className="w-32 h-32 relative -top-24 -left-12 z-50 pointer-events-none transition-all duration-500 ease-in-out">
             <div className="absolute inset-0 animate-bounce">
                 {/* Graduation Cap */}
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2">
@@ -59,21 +60,27 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
         </div>
     );
 
-    // Sinh tọa độ các điểm dựa trên Sine Wave
+    // Sinh tọa độ các điểm (Horizontal)
     const points = useMemo(() => {
         return Array.from({ length: totalSessions }).map((_, i) => ({
             id: i + 1,
-            // X dao động quanh trục giữa, dùng Math.sin
-            x: CONFIG.WIDTH / 2 + Math.sin(i) * CONFIG.AMPLITUDE,
-            y: CONFIG.START_Y + i * CONFIG.GAP,
-            status: i + 1 < currentSession ? 'completed' : (i + 1 === currentSession ? 'active' : 'locked')
+            x: CONFIG.START_X + i * CONFIG.GAP,
+            y: CONFIG.START_Y + Math.sin(i * 0.8) * CONFIG.AMPLITUDE * (i % 2 === 0 ? 1 : -1) * 0.5 + Math.sin(i) * CONFIG.AMPLITUDE,
         }));
-    }, [totalSessions, currentSession]);
+    }, [totalSessions]);
 
-    // Tính chiều cao tổng của SVG
-    const totalHeight = CONFIG.START_Y + (totalSessions - 1) * CONFIG.GAP + 150;
+    // Update status
+    const pointsWithStatus = useMemo(() => {
+        return points.map(p => ({
+            ...p,
+            status: p.id < currentSession ? 'completed' : (p.id === currentSession ? 'active' : 'locked')
+        }));
+    }, [points, currentSession]);
 
-    // Tạo đường nối SVG (Cubic Bezier Curve)
+    // SVG Layout
+    const totalWidth = CONFIG.START_X + (totalSessions) * CONFIG.GAP;
+
+    // Tạo đường cong SVG
     const pathData = useMemo(() => {
         if (points.length === 0) return "";
         let d = `M ${points[0].x} ${points[0].y}`;
@@ -82,27 +89,43 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
             const p1 = points[i];
             const p2 = points[i + 1];
 
-            // Điểm điều khiển (Control Points) để tạo đường cong chữ S mềm mại
-            // CP1 đi xuống từ P1, CP2 đi lên từ P2
-            const cp1x = p1.x;
-            const cp1y = p1.y + CONFIG.GAP * 0.5;
-            const cp2x = p2.x;
-            const cp2y = p2.y - CONFIG.GAP * 0.5;
+            const cp1x = p1.x + CONFIG.GAP * 0.5;
+            const cp1y = p1.y;
+            const cp2x = p2.x - CONFIG.GAP * 0.5;
+            const cp2y = p2.y;
 
             d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
         }
         return d;
     }, [points]);
 
+    // Auto scroll
+    useEffect(() => {
+        if (containerRef.current) {
+            const activePoint = points[currentSession - 1];
+            if (activePoint) {
+                const scrollTo = activePoint.x - window.innerWidth / 2;
+                containerRef.current.scrollTo({
+                    left: Math.max(0, scrollTo),
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }, [currentSession, points]);
+
     return (
-        <div className="w-full max-w-md mx-auto relative my-12" style={{ height: totalHeight }}>
-            {/* Lớp SVG vẽ đường đi */}
+        <div
+            ref={containerRef}
+            className="w-full h-full overflow-x-auto overflow-y-hidden relative custom-scrollbar z-0"
+            style={{ height: CONFIG.HEIGHT, scrollBehavior: 'smooth' }}
+        >
             <svg
-                className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none"
-                viewBox={`0 0 ${CONFIG.WIDTH} ${totalHeight}`}
-                preserveAspectRatio="xMidYMin slice"
+                className="absolute top-0 left-0 overflow-visible pointer-events-none"
+                width={totalWidth}
+                height={CONFIG.HEIGHT}
+                viewBox={`0 0 ${totalWidth} ${CONFIG.HEIGHT}`}
             >
-                {/* Đường nền (Đất) */}
+                {/* REVERTED STYLE: Brand color path */}
                 <path
                     d={pathData}
                     stroke="var(--color-brand-path)"
@@ -111,7 +134,7 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
                     strokeLinecap="round"
                     className="drop-shadow-xl"
                 />
-                {/* Đường đứt nét trang trí */}
+                {/* REVERTED STYLE: Simple dashed line */}
                 <path
                     d={pathData}
                     stroke="rgba(255,255,255,0.4)"
@@ -121,38 +144,42 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
                 />
             </svg>
 
-            {/* Render các điểm Checkpoint */}
-            {points.map((p) => (
+            {/* REVERTED CHECKPOINTS STYLE */}
+            {pointsWithStatus.map((p) => (
                 <div
                     key={p.id}
                     className={`
                         absolute w-16 h-16 -ml-8 -mt-8 rounded-full flex items-center justify-center 
-                        text-2xl font-black border-4 transition-transform duration-300
+                        text-2xl font-black border-4 transition-transform duration-300 z-10
                         ${getPointStyles(p.status)}
                     `}
                     style={{
-                        left: `${(p.x / CONFIG.WIDTH) * 100}%`, // Convert to percentage layout
+                        left: p.x,
                         top: p.y
                     }}
                 >
                     {p.status === 'completed' ? '⭐' : p.id}
 
-                    {/* Hiệu ứng Active Ping */}
                     {p.status === 'active' && (
                         <span className="absolute w-full h-full rounded-full bg-brand-accent opacity-75 animate-ping -z-10"></span>
                     )}
+
+                    {/* Label dưới chân */}
+                    <div className="absolute -bottom-10 w-24 text-center text-sm font-bold text-gray-400 opacity-60">
+                        {p.status === 'completed' ? `Buổi ${p.id}` : ''}
+                    </div>
                 </div>
             ))}
 
-            {/* --- RENDER CHARACTER --- */}
+            {/* Render Character */}
             {points.map((p) => {
                 if (p.id === currentSession) {
                     return (
                         <div
                             key="character"
-                            className="absolute transition-all duration-1000 ease-in-out"
+                            className="absolute transition-all duration-1000 ease-in-out z-20"
                             style={{
-                                left: `${(p.x / CONFIG.WIDTH) * 100}%`,
+                                left: p.x,
                                 top: p.y
                             }}
                         >
@@ -166,7 +193,7 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
     );
 };
 
-// Helper style
+// REVERTED STYLE HELPER
 const getPointStyles = (status) => {
     switch (status) {
         case 'active':

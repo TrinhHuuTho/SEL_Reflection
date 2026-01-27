@@ -34,6 +34,23 @@
     }
 }
 
+/* Custom Scrollbar for Map Path */
+.custom-scrollbar::-webkit-scrollbar {
+    height: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-brand-secondary);
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brand-primary);
+}
+
 body {
   background-color: var(--color-brand-bg);
   color: var(--color-brand-text);

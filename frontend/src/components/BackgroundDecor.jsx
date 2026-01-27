@@ -11,13 +11,13 @@ const BackgroundDecor = () => {
     ], []);
 
     return (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
 
             {/* --- CLOUDS --- */}
             {clouds.map((cloud) => (
                 <div
                     key={cloud.id}
-                    className="absolute opacity-80 animate-float"
+                    className="absolute opacity-80 animate-float z-30"
                     style={{
                         top: cloud.top,
                         left: cloud.left,
@@ -36,7 +36,7 @@ const BackgroundDecor = () => {
             ))}
 
             {/* --- TREES (LEFT SIDE) --- */}
-            <div className="absolute bottom-0 left-0 flex flex-col items-start space-y-reverse space-y-[-60px] pb-10">
+            <div className="absolute bottom-0 left-0 flex flex-col items-start space-y-reverse space-y-[-60px] pb-10 z-20">
                 {/* Hàng cây dọc bên trái */}
                 <SimpleTree scale={1.2} color="bg-emerald-500" />
                 <SimpleTree scale={0.9} color="bg-teal-500" delay="1s" />
@@ -46,13 +46,13 @@ const BackgroundDecor = () => {
             </div>
 
             {/* --- BUSHES (LEFT BOTTOM CORNER) --- */}
-            <div className="absolute bottom-0 left-0 flex items-end -space-x-12 z-10">
+            <div className="absolute bottom-0 left-0 flex items-end -space-x-12 z-20">
                 <SimpleTree scale={1.5} color="bg-green-700" delay="0.2s" />
                 <SimpleTree scale={1.0} color="bg-emerald-800" delay="1.2s" />
             </div>
 
             {/* --- TREES (RIGHT SIDE) --- */}
-            <div className="absolute bottom-0 right-0 flex flex-col items-end space-y-reverse space-y-[-50px] pb-10">
+            <div className="absolute bottom-0 right-0 flex flex-col items-end space-y-reverse space-y-[-50px] pb-10 z-20">
                 {/* Hàng cây dọc bên phải */}
                 <SimpleTree scale={1.3} color="bg-green-500" delay="0.3s" />
                 <SimpleTree scale={0.8} color="bg-emerald-600" delay="2.3s" />
@@ -61,7 +61,7 @@ const BackgroundDecor = () => {
             </div>
 
             {/* --- BUSHES (RIGHT BOTTOM CORNER) --- */}
-            <div className="absolute bottom-0 right-0 flex items-end -space-x-10 flex-row-reverse z-10">
+            <div className="absolute bottom-0 right-0 flex items-end -space-x-10 flex-row-reverse z-20">
                 <SimpleTree scale={1.4} color="bg-emerald-700" delay="0.5s" />
                 <SimpleTree scale={1.1} color="bg-green-800" delay="1.5s" />
             </div>
