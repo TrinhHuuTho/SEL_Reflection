@@ -96,7 +96,16 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    if (typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email không hợp lệ'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -118,7 +127,7 @@ exports.forgotPassword = async (req, res) => {
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: email,
+      to: normalizedEmail,
       subject: 'Đặt lại mật khẩu',
       html: emailHtml
     };
@@ -151,6 +160,13 @@ exports.changePassword = async (req, res) => {
       });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email không hợp lệ'
+      });
+    }
+
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -158,7 +174,9 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({
         success: false,
