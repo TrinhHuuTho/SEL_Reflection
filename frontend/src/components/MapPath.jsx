@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
     // Cấu hình bản đồ ngang (Horizontal)
@@ -113,82 +114,110 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
         }
     }, [currentSession, points]);
 
-    return (
-        <div
-            ref={containerRef}
-            className="w-full h-full overflow-x-auto overflow-y-hidden relative custom-scrollbar z-0"
-            style={{ height: CONFIG.HEIGHT, scrollBehavior: 'smooth' }}
-        >
-            <svg
-                className="absolute top-0 left-0 overflow-visible pointer-events-none"
-                width={totalWidth}
-                height={CONFIG.HEIGHT}
-                viewBox={`0 0 ${totalWidth} ${CONFIG.HEIGHT}`}
-            >
-                {/* REVERTED STYLE: Brand color path */}
-                <path
-                    d={pathData}
-                    stroke="var(--color-brand-path)"
-                    strokeWidth="60"
-                    fill="none"
-                    strokeLinecap="round"
-                    className="drop-shadow-xl"
-                />
-                {/* REVERTED STYLE: Simple dashed line */}
-                <path
-                    d={pathData}
-                    stroke="rgba(255,255,255,0.4)"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeDasharray="15 15"
-                />
-            </svg>
+    const handleScroll = (direction) => {
+        if (containerRef.current) {
+            const scrollAmount = 300;
+            const newScrollLeft = containerRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+            containerRef.current.scrollTo({
+                left: newScrollLeft,
+                behavior: 'smooth'
+            });
+        }
+    };
 
-            {/* REVERTED CHECKPOINTS STYLE */}
-            {pointsWithStatus.map((p) => (
-                <div
-                    key={p.id}
-                    className={`
+    return (
+        <div className="relative w-full h-full group">
+            <div
+                ref={containerRef}
+                className="w-full h-full overflow-x-auto overflow-y-hidden relative no-scrollbar z-0"
+                style={{ height: CONFIG.HEIGHT, scrollBehavior: 'smooth' }}
+            >
+                <svg
+                    className="absolute top-0 left-0 overflow-visible pointer-events-none"
+                    width={totalWidth}
+                    height={CONFIG.HEIGHT}
+                    viewBox={`0 0 ${totalWidth} ${CONFIG.HEIGHT}`}
+                >
+                    {/* REVERTED STYLE: Brand color path */}
+                    <path
+                        d={pathData}
+                        stroke="var(--color-brand-path)"
+                        strokeWidth="60"
+                        fill="none"
+                        strokeLinecap="round"
+                        className="drop-shadow-xl"
+                    />
+                    {/* REVERTED STYLE: Simple dashed line */}
+                    <path
+                        d={pathData}
+                        stroke="rgba(255,255,255,0.4)"
+                        strokeWidth="4"
+                        fill="none"
+                        strokeDasharray="15 15"
+                    />
+                </svg>
+
+                {/* REVERTED CHECKPOINTS STYLE */}
+                {pointsWithStatus.map((p) => (
+                    <div
+                        key={p.id}
+                        className={`
                         absolute w-16 h-16 -ml-8 -mt-8 rounded-full flex items-center justify-center 
                         text-2xl font-black border-4 transition-transform duration-300 z-10
                         ${getPointStyles(p.status)}
                     `}
-                    style={{
-                        left: p.x,
-                        top: p.y
-                    }}
-                >
-                    {p.status === 'completed' ? '⭐' : p.id}
+                        style={{
+                            left: p.x,
+                            top: p.y
+                        }}
+                    >
+                        {p.status === 'completed' ? '⭐' : p.id}
 
-                    {p.status === 'active' && (
-                        <span className="absolute w-full h-full rounded-full bg-brand-accent opacity-75 animate-ping -z-10"></span>
-                    )}
+                        {p.status === 'active' && (
+                            <span className="absolute w-full h-full rounded-full bg-brand-accent opacity-75 animate-ping -z-10"></span>
+                        )}
 
-                    {/* Label dưới chân */}
-                    <div className="absolute -bottom-10 w-24 text-center text-sm font-bold text-gray-400 opacity-60">
-                        {p.status === 'completed' ? `Buổi ${p.id}` : ''}
-                    </div>
-                </div>
-            ))}
-
-            {/* Render Character */}
-            {points.map((p) => {
-                if (p.id === currentSession) {
-                    return (
-                        <div
-                            key="character"
-                            className="absolute transition-all duration-1000 ease-in-out z-20"
-                            style={{
-                                left: p.x,
-                                top: p.y
-                            }}
-                        >
-                            <Character />
+                        {/* Label dưới chân */}
+                        <div className="absolute -bottom-10 w-24 text-center text-sm font-bold text-gray-400 opacity-60">
+                            {p.status === 'completed' ? `Buổi ${p.id}` : ''}
                         </div>
-                    );
-                }
-                return null;
-            })}
+                    </div>
+                ))}
+
+                {/* Render Character */}
+                {points.map((p) => {
+                    if (p.id === currentSession) {
+                        return (
+                            <div
+                                key="character"
+                                className="absolute transition-all duration-1000 ease-in-out z-20"
+                                style={{
+                                    left: p.x,
+                                    top: p.y
+                                }}
+                            >
+                                <Character />
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
+            </div>
+
+            {/* Navigation Buttons */}
+            <button
+                onClick={() => handleScroll('left')}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/50 hover:bg-white p-3 rounded-full shadow-lg backdrop-blur-sm transition-all hover:scale-110 text-brand-primary cursor-pointer border border-white/50"
+            >
+                <ChevronLeft size={32} strokeWidth={3} />
+            </button>
+
+            <button
+                onClick={() => handleScroll('right')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-white/50 hover:bg-white p-3 rounded-full shadow-lg backdrop-blur-sm transition-all hover:scale-110 text-brand-primary cursor-pointer border border-white/50"
+            >
+                <ChevronRight size={32} strokeWidth={3} />
+            </button>
         </div>
     );
 };
