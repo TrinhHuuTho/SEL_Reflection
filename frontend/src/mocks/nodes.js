@@ -1213,5 +1213,140 @@ export const nodes = [
     "description": "Nội dung bài học ngày 5 về khám phá kiến thức mới của hành trình này.",
     "isOpen": true,
     "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea136",
+    "journeyId": "60d5ecb8b392d7001f8e9002",
+    "title": "Day 6",
+    "order": 6,
+    "description": "Nội dung bài học ngày 6 - Vật lý nâng cao.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea137",
+    "journeyId": "60d5ecb8b392d7001f8e9002",
+    "title": "Day 7",
+    "order": 7,
+    "description": "Nội dung bài học ngày 7 - Vật lý nâng cao.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea138",
+    "journeyId": "60d5ecb8b392d7001f8e9002",
+    "title": "Day 8",
+    "order": 8,
+    "description": "Nội dung bài học ngày 8 - Vật lý nâng cao.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea139",
+    "journeyId": "60d5ecb8b392d7001f8e9002",
+    "title": "Day 9",
+    "order": 9,
+    "description": "Nội dung bài học ngày 9 - Vật lý nâng cao.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea140",
+    "journeyId": "60d5ecb8b392d7001f8e9002",
+    "title": "Day 10",
+    "order": 10,
+    "description": "Nội dung bài học ngày 10 - Vật lý nâng cao.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea141",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 6",
+    "order": 6,
+    "description": "Nội dung bài học ngày 6 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea142",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 7",
+    "order": 7,
+    "description": "Nội dung bài học ngày 7 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea143",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 8",
+    "order": 8,
+    "description": "Nội dung bài học ngày 8 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea144",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 9",
+    "order": 9,
+    "description": "Nội dung bài học ngày 9 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea145",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 10",
+    "order": 10,
+    "description": "Nội dung bài học ngày 10 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea146",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 11",
+    "order": 11,
+    "description": "Nội dung bài học ngày 11 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea147",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 12",
+    "order": 12,
+    "description": "Nội dung bài học ngày 12 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea148",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 13",
+    "order": 13,
+    "description": "Nội dung bài học ngày 13 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea149",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 14",
+    "order": 14,
+    "description": "Nội dung bài học ngày 14 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "_id": "60d5ecb8b392d7001f8ea150",
+    "journeyId": "60d5ecb8b392d7001f8e9003",
+    "title": "Day 15",
+    "order": 15,
+    "description": "Nội dung bài học ngày 15 - Từ vựng và Ngữ pháp.",
+    "isOpen": true,
+    "createdAt": "2023-01-01T00:00:00.000Z"
   }
 ];
