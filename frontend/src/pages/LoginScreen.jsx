@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { users } from '../mocks/users';
 import BackgroundDecor from '../components/BackgroundDecor';
 
 const LoginScreen = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -14,11 +15,18 @@ const LoginScreen = ({ onLogin }) => {
 
         // Giả lập call API login
         setTimeout(() => {
-            if (username.trim().length > 0 && password.length > 0) {
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                if (!user.isActive) {
+                    setError('Tài khoản của bạn đã bị khóa!');
+                    setIsLoading(false);
+                    return;
+                }
                 // Login thành công
-                onLogin(username);
+                onLogin(user);
             } else {
-                setError('Vui lòng nhập tên và mật khẩu nhé!');
+                setError('Email hoặc mật khẩu không chính xác!');
                 setIsLoading(false);
             }
         }, 1000);
@@ -48,15 +56,15 @@ const LoginScreen = ({ onLogin }) => {
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Username Input */}
+                        {/* Email Input */}
                         <div>
-                            <label className="block text-brand-text font-bold mb-1 ml-2 text-sm">Tên nhà thám hiểm</label>
+                            <label className="block text-brand-text font-bold mb-1 ml-2 text-sm">Email đăng nhập</label>
                             <input
-                                type="text"
+                                type="email"
                                 className="w-full bg-blue-50 border-2 border-blue-200 rounded-xl px-4 py-3 text-base font-bold text-brand-text focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 transition-all placeholder:text-blue-200"
-                                placeholder="Nhập tên của bạn..."
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
 
