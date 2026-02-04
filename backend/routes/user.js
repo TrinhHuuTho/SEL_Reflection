@@ -10,6 +10,6 @@ const userRateLimiter = rateLimit({
 });
 
 router.get('/information', authenticateToken, userRateLimiter, userController.getUserInformation);
-router.put('/change-information', authenticateToken, userRateLimiter, userController.changeUserInformation);
+router.put('/change-information', userRateLimiter, authenticateToken, userController.changeUserInformation);
 
 module.exports = router;
