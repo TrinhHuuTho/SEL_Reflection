@@ -9,7 +9,7 @@ const userRateLimiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
 });
 
-router.get('/information', authenticateToken, userRateLimiter, userController.getUserInformation);
+router.get('/information', userRateLimiter, authenticateToken, userController.getUserInformation);
 router.put('/change-information', userRateLimiter, authenticateToken, userController.changeUserInformation);
 
 module.exports = router;
