@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import BackgroundDecor from '../components/BackgroundDecor';
+import Header from '../../components/Header';
+import BackgroundDecor from '../../components/BackgroundDecor';
 
 const ProfileScreen = ({ user, onLogout }) => {
     const navigate = useNavigate();

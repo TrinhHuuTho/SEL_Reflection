@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import MapPath from '../components/MapPath';
-import QuestionModal from '../components/QuestionModal';
-import BackgroundDecor from '../components/BackgroundDecor';
-import { nodes } from '../mocks/nodes';
-import { journeys } from '../mocks/journeys';
+import MapPath from '../../components/MapPath';
+import QuestionModal from '../../components/QuestionModal';
+import BackgroundDecor from '../../components/BackgroundDecor';
+import { nodes } from '../../mocks/nodes';
+import { journeys } from '../../mocks/journeys';
 
 function MainGameScreen() {
     const { journeyId } = useParams();

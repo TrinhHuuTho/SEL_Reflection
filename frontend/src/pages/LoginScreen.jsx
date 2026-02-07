@@ -26,8 +26,15 @@ const LoginScreen = ({ onLogin }) => {
                     return;
                 }
                 // Login thành công
+                // Login thành công
                 onLogin(user);
-                navigate('/');
+
+                // Redirect based on role
+                if (user.role === 'Giáo viên') {
+                    navigate('/teacher');
+                } else {
+                    navigate('/');
+                }
             } else {
                 setError('Email hoặc mật khẩu không chính xác!');
                 setIsLoading(false);
