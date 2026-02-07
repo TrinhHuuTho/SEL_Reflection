@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { users } from '../mocks/users';
 import BackgroundDecor from '../components/BackgroundDecor';
 
 const LoginScreen = ({ onLogin }) => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -25,6 +27,7 @@ const LoginScreen = ({ onLogin }) => {
                 }
                 // Login thành công
                 onLogin(user);
+                navigate('/');
             } else {
                 setError('Email hoặc mật khẩu không chính xác!');
                 setIsLoading(false);
