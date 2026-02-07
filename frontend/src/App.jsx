@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import MainGameScreen from "./pages/MainGameScreen"
 import LoginScreen from "./pages/LoginScreen"
 import JourneySelectionScreen from "./pages/JourneySelectionScreen"
+import ProfileScreen from "./pages/ProfileScreen"
 
 function App() {
     // Simple state management for now. 
@@ -11,6 +12,10 @@ function App() {
 
     const handleLogin = (userData) => {
         setUser(userData);
+    };
+
+    const handleLogout = () => {
+        setUser(null);
     };
 
     // Protected Route Wrapper
@@ -31,6 +36,15 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <JourneySelectionScreen user={user} />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <ProfileScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />
