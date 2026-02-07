@@ -1,10 +1,17 @@
+
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import MapPath from '../components/MapPath';
 import QuestionModal from '../components/QuestionModal';
 import BackgroundDecor from '../components/BackgroundDecor';
 import { nodes } from '../mocks/nodes';
+import { journeys } from '../mocks/journeys';
 
-function MainGameScreen({ journey, onBack }) {
+function MainGameScreen() {
+    const { journeyId } = useParams();
+    const navigate = useNavigate();
+    const [journey, setJourney] = useState(null);
+
     const [progress, setProgress] = useState({
         total: 10, // Default fallback
         current: 1
@@ -14,25 +21,26 @@ function MainGameScreen({ journey, onBack }) {
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
-        if (journey) {
-            // Find nodes for this journey
-            const relatedNodes = nodes.filter(n => n.journeyId === journey._id);
-            // Sort by order just in case
-            relatedNodes.sort((a, b) => a.order - b.order);
+        if (journeyId) {
+            // Find journey
+            const foundJourney = journeys.find(j => j._id === journeyId);
+            setJourney(foundJourney);
 
-            setJourneyNodes(relatedNodes);
+            if (foundJourney) {
+                // Find nodes for this journey
+                const relatedNodes = nodes.filter(n => n.journeyId === foundJourney._id);
+                // Sort by order just in case
+                relatedNodes.sort((a, b) => a.order - b.order);
 
-            // Calculate progress (Logic: Count how many are completed/open)
-            // For now, let's assume current is the first open one or last completed + 1
-            // Since mock data isOpen=true for all, let's just default to 1 for new journey
-            // Or if we had user-progress data, we would use it here.
+                setJourneyNodes(relatedNodes);
 
-            setProgress({
-                total: relatedNodes.length,
-                current: 1
-            });
+                setProgress({
+                    total: relatedNodes.length,
+                    current: 1
+                });
+            }
         }
-    }, [journey]);
+    }, [journeyId]);
 
     const handleNextLevel = () => {
         // Logic giả định: Mỗi lần bấm Next -> Character đi đến đích -> Hiện câu hỏi
@@ -65,7 +73,7 @@ function MainGameScreen({ journey, onBack }) {
             {/* Header: Title & Back Button */}
             <div className="w-full max-w-6xl mx-auto px-4 z-50 flex items-center justify-between mb-4 relative">
                 <button
-                    onClick={onBack}
+                    onClick={() => navigate('/')}
                     className="bg-white/80 hover:bg-white text-gray-700 px-4 py-2 rounded-xl font-bold backdrop-blur-sm shadow-sm transition-all flex items-center gap-2"
                 >
                     ⬅️ Quay lại
@@ -105,4 +113,4 @@ function MainGameScreen({ journey, onBack }) {
     )
 }
 
-export default MainGameScreen
+export default MainGameScreen;

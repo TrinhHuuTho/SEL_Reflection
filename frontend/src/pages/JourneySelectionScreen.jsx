@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import JourneyCard from '../components/JourneyCard';
 import BackgroundDecor from '../components/BackgroundDecor';
@@ -10,7 +11,8 @@ import { class_members } from '../mocks/class_members';
 import { classes } from '../mocks/classes';
 import { journeys } from '../mocks/journeys';
 
-const JourneySelectionScreen = ({ user, onSelectJourney }) => {
+const JourneySelectionScreen = ({ user }) => {
+    const navigate = useNavigate();
     const [center, setCenter] = useState(null);
     const [classInfo, setClassInfo] = useState(null);
     const [availableJourneys, setAvailableJourneys] = useState([]);
@@ -76,7 +78,7 @@ const JourneySelectionScreen = ({ user, onSelectJourney }) => {
                             <JourneyCard
                                 key={journey._id}
                                 journey={journey}
-                                onClick={() => onSelectJourney(journey)}
+                                onClick={() => navigate(`/journey/${journey._id}`)}
                             />
                         ))}
                     </div>
