@@ -56,8 +56,11 @@ function MainGameScreen() {
         }, 300); // Đợi modal đóng hẳn
     };
 
-    const handlePrevLevel = () => {
-        setProgress(prev => ({ ...prev, current: Math.max(prev.current - 1, 1) }));
+    const handleNodeClick = (nodeId) => {
+        // Chỉ cho phép click vào node hiện tại (đang active) để làm bài
+        if (nodeId === progress.current) {
+            setShowModal(true);
+        }
     };
 
     return (
@@ -93,22 +96,12 @@ function MainGameScreen() {
 
             {/* Map Container */}
             <div className="w-full h-full z-10 mt-8">
-                <MapPath totalSessions={progress.total} currentSession={progress.current} />
+                <MapPath
+                    totalSessions={progress.total}
+                    currentSession={progress.current}
+                    onNodeClick={handleNodeClick}
+                />
             </div>
-
-            {/* Debug Controls */}
-            <div className="fixed bottom-4 left-4 z-50 bg-black/50 p-2 rounded-lg backdrop-blur-md text-white">
-                <p className="text-xs mb-1 font-mono text-gray-300">DEBUG MODE</p>
-                <div className="flex gap-2">
-                    <button onClick={handlePrevLevel} className="bg-gray-700 px-3 py-1 rounded hover:bg-gray-600 text-sm">
-                        PREV
-                    </button>
-                    <button onClick={handleNextLevel} className="bg-brand-accent text-brand-text px-3 py-1 rounded hover:bg-yellow-300 text-sm font-bold">
-                        NEXT STEP
-                    </button>
-                </div>
-            </div>
-
         </div>
     )
 }
