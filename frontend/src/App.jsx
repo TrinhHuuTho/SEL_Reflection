@@ -8,6 +8,7 @@ import TeacherDashboard from "./pages/TeacherPages/TeacherDashboard"
 import ClassManagementScreen from "./pages/TeacherPages/ClassManagementScreen"
 import JourneyDetailScreen from "./pages/TeacherPages/JourneyDetailScreen"
 import TeacherProfileScreen from "./pages/TeacherPages/TeacherProfileScreen"
+import StatisticsScreen from "./pages/TeacherPages/StatisticsScreen"
 
 function App() {
     // Simple state management for now. 
@@ -110,6 +111,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['Giáo viên']}>
                             <TeacherProfileScreen user={user} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/teacher/statistics"
+                    element={
+                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                            <StatisticsScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />

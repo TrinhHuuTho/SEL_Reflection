@@ -151,13 +151,22 @@ const TeacherDashboard = ({ user, onLogout }) => {
                             </button>
                         </div>
 
-                        <div className="bg-green-50 p-6 rounded-xl border border-green-100 hover:shadow-lg transition-shadow cursor-pointer">
+                        <div
+                            className="bg-green-50 p-6 rounded-xl border border-green-100 hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={() => navigate('/teacher/statistics')}
+                        >
                             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 text-2xl">
                                 📊
                             </div>
                             <h3 className="text-xl font-bold text-green-700 mb-2">Thống kê & Báo cáo</h3>
                             <p className="text-gray-600 mb-4 text-sm">Xem tiến độ học tập và kết quả phản tư của học sinh.</p>
-                            <button className="text-green-600 font-bold hover:underline">
+                            <button
+                                className="text-green-600 font-bold hover:underline"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/teacher/statistics');
+                                }}
+                            >
                                 Xem báo cáo ➜
                             </button>
                         </div>
