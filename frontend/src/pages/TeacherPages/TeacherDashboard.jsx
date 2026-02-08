@@ -131,6 +131,26 @@ const TeacherDashboard = ({ user, onLogout }) => {
                             </button>
                         </div>
 
+                        <div
+                            className="bg-purple-50 p-6 rounded-xl border border-purple-100 hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={() => navigate('/teacher/profile')}
+                        >
+                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4 text-2xl">
+                                👤
+                            </div>
+                            <h3 className="text-xl font-bold text-brand-primary mb-2">Hồ sơ cá nhân</h3>
+                            <p className="text-gray-600 mb-4 text-sm">Xem thông tin cá nhân và đổi mật khẩu.</p>
+                            <button
+                                className="text-brand-secondary font-bold hover:underline"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/teacher/profile');
+                                }}
+                            >
+                                Xem hồ sơ ➜
+                            </button>
+                        </div>
+
                         <div className="bg-green-50 p-6 rounded-xl border border-green-100 hover:shadow-lg transition-shadow cursor-pointer">
                             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 text-2xl">
                                 📊

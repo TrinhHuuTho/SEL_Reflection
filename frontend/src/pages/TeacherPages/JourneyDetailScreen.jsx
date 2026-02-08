@@ -39,16 +39,49 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
         }
     };
 
+    const handleAddNewNode = () => {
+        const newNode = {
+            _id: `temp-${Date.now()}`, // Temporary ID
+            journeyId: journeyId,
+            title: '',
+            description: '',
+            order: journeyNodes.length + 1,
+            isOpen: false,
+            createdAt: new Date().toISOString()
+        };
+        setSelectedNode(newNode);
+        setShowEditModal(true);
+    };
+
     const closeEditModal = () => {
         setShowEditModal(false);
         setSelectedNode(null);
     };
 
-    // Dummy save function for UI demo
+    // Save function (Create or Update)
     const handleSaveNode = () => {
-        // Logic to update node would go here
-        alert(`Đã lưu thay đổi cho node: ${selectedNode.title}`);
+        if (!selectedNode.title.trim()) {
+            alert("Vui lòng nhập tiêu đề!");
+            return;
+        }
+
+        // Check if it's a new node (by checking if ID exists in current list)
+        const existingNodeIndex = journeyNodes.findIndex(n => n._id === selectedNode._id);
+
+        let updatedNodes;
+        if (existingNodeIndex >= 0) {
+            // Update existing
+            updatedNodes = [...journeyNodes];
+            updatedNodes[existingNodeIndex] = selectedNode;
+        } else {
+            // Add new
+            updatedNodes = [...journeyNodes, selectedNode];
+        }
+
+        setJourneyNodes(updatedNodes);
         closeEditModal();
+
+        // In a real app, this would trigger an API call
     };
 
 
@@ -111,15 +144,19 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề</label>
                                 <input
                                     type="text"
-                                    defaultValue={selectedNode.title}
+                                    value={selectedNode.title}
+                                    onChange={(e) => setSelectedNode({ ...selectedNode, title: e.target.value })}
+                                    placeholder="Nhập tiêu đề bài học..."
                                     className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                                 <textarea
-                                    defaultValue={selectedNode.description}
+                                    value={selectedNode.description}
+                                    onChange={(e) => setSelectedNode({ ...selectedNode, description: e.target.value })}
                                     rows={4}
+                                    placeholder="Nhập mô tả nội dung..."
                                     className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none"
                                 />
                             </div>
@@ -159,6 +196,16 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Add Node Button (Visible in Edit Mode) */}
+                    {isEditing && (
+                        <button
+                            onClick={handleAddNewNode}
+                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm"
+                        >
+                            <span>➕ Thêm Node</span>
+                        </button>
+                    )}
+
                     {/* Edit Mode Toggle Button */}
                     <button
                         onClick={() => setIsEditing(!isEditing)}

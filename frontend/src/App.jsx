@@ -7,6 +7,7 @@ import ProfileScreen from "./pages/StudentPages/ProfileScreen"
 import TeacherDashboard from "./pages/TeacherPages/TeacherDashboard"
 import ClassManagementScreen from "./pages/TeacherPages/ClassManagementScreen"
 import JourneyDetailScreen from "./pages/TeacherPages/JourneyDetailScreen"
+import TeacherProfileScreen from "./pages/TeacherPages/TeacherProfileScreen"
 
 function App() {
     // Simple state management for now. 
@@ -100,6 +101,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['Giáo viên']}>
                             <JourneyDetailScreen user={user} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/teacher/profile"
+                    element={
+                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                            <TeacherProfileScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />
