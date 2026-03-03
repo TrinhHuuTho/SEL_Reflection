@@ -1,6 +1,6 @@
 # 1. Giới thiệu (Introduction)
 
-![alt text](/images/overview.png)
+![alt text](/docs/images/overview.png)
 
 ## 1.1. Mục đích
 
@@ -43,47 +43,47 @@ Cung cấp cái nhìn tổng quan và chi tiết về các yêu cầu chức nă
 
 ### 2.3.1. Biểu đồ Use case tổng quan
 
-![Biểu đồ Use case tổng quan](/images/image.png)
+![Biểu đồ Use case tổng quan](/docs/images/image.png)
 
 ### 2.3.2. Biểu đồ Use case phân rã
 
 #### 2.3.2.1. Use Case "Đăng nhập Google Whitelist"
 
-![Đăng nhập Google Whitelist](/images/image-2.png)
+![Đăng nhập Google Whitelist](/docs/images/image-2.png)
 
 #### 2.3.2.2. Use Case "Tạo Hành trình"
 
-![Tạo Hành trình](/images/image-3.png)
+![Tạo Hành trình](/docs/images/image-3.png)
 
 #### 2.3.2.3. Use Case "Phản hồi Cảm xúc"
 
-![Phản hồi](/images/image-4.png)
+![Phản hồi](/docs/images/image-4.png)
 
 #### 2.3.2.4. Use Case "Chỉnh sửa Phản hồi"
 
-![Sửa Phản hồi](/images/image-5.png)
+![Sửa Phản hồi](/docs/images/image-5.png)
 
 #### 2.3.2.5. Use Case "Xem Báo cáo Chi tiết Lớp"
 
-![Xem Báo cáo Chi tiết Lớp](/images/image-6.png)
+![Xem Báo cáo Chi tiết Lớp](/docs/images/image-6.png)
 
 ## 2.4. Quy trình nghiệp vụ (Business Process)
 
 ### 2.4.1. Quy trình nghiệp vụ tổng quát
 
-![Quy trình nghiệp vụ tổng quát](/images/image-7.png)
+![Quy trình nghiệp vụ tổng quát](/docs/images/image-7.png)
 
 ### 2.4.2. Quy trình Giáo viên Thiết lập Hành trình
 
-![Giáo viên Thiết lập Hành trình](/images/image-8.png)
+![Giáo viên Thiết lập Hành trình](/docs/images/image-8.png)
 
 ### 2.4.3. Quy trình Học sinh Phản hồi Cảm xúc
 
-![Học sinh Phản hồi Cảm xúc](/images/image-9.png)
+![Học sinh Phản hồi Cảm xúc](/docs/images/image-9.png)
 
 ### 2.4.4. Quy trình Giáo viên Xem Báo cáo Chi tiết
 
-![Giáo viên Xem Báo cáo Chi tiết](/images/image-10.png)
+![Giáo viên Xem Báo cáo Chi tiết](/docs/images/image-10.png)
 
 ## 2.5. Đặc tả các use case
 

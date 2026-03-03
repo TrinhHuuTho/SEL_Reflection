@@ -1,0 +1,22 @@
+documentation:
+  - docs/**
+  - "**/*.md"
+  - README.md
+
+frontend:
+  - frontend/**
+
+backend:
+  - backend/**
+
+config:
+  - "**/*.config.js"
+  - "**/*.config.ts"
+  - "**/package.json"
+  - .github/**
+
+assets:
+  - images/**
+  - "**/*.png"
+  - "**/*.jpg"
+  - "**/*.svg"
