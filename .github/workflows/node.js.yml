@@ -5,30 +5,57 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["develop"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["develop"]
 
 permissions:
   contents: read
 
 jobs:
-  build:
-
+  frontend:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: ./frontend
+      - name: Lint Frontend
+        run: npm run lint
+        working-directory: ./frontend
+      - name: Build Frontend
+        run: npm run build
+        working-directory: ./frontend
+
+  backend:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: ./backend
+      - name: Run Backend Tests
+        run: npm test
+        working-directory: ./backend
