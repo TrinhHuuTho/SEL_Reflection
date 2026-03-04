@@ -29,6 +29,19 @@ export const users = [
         isActive: true,
         created_at: "2023-01-01T00:00:00.000Z"
     },
+
+    // Giáo viên tự do (Không thuộc trung tâm nào)
+    {
+        _id: "60d5ecb8b392d7001f8e8e99",
+        email: "teacher_free@gmail.com",
+        password: "password123",
+        full_name: "Giáo Viên Tự Do",
+        role: "Giáo viên",
+        avatar: "https://i.pravatar.cc/150?u=teacher_free",
+        isActive: true,
+        created_at: "2023-01-01T00:00:00.000Z"
+    },
+
     // Học sinh Trung Tâm HKT Lã Xuân Oai
     {
         _id: "60d5ecb8b392d7001f8e8e41",
@@ -123,5 +136,5 @@ export const users = [
         avatar: "https://i.pravatar.cc/150?u=student_nh_8",
         isActive: true,
         created_at: "2023-01-01T00:00:00.000Z"
-    }
+    },
 ];

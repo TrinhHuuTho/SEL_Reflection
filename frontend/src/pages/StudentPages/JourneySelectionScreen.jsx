@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import JourneyCard from '../components/JourneyCard';
-import BackgroundDecor from '../components/BackgroundDecor';
+import Header from '../../components/Header';
+import JourneyCard from '../../components/JourneyCard';
+import BackgroundDecor from '../../components/BackgroundDecor';
 
 // Mock Data
-import { user_center } from '../mocks/user_center';
-import { centers } from '../mocks/centers';
-import { class_members } from '../mocks/class_members';
-import { classes } from '../mocks/classes';
-import { journeys } from '../mocks/journeys';
+import { user_center } from '../../mocks/user_center';
+import { centers } from '../../mocks/centers';
+import { class_members } from '../../mocks/class_members';
+import { classes } from '../../mocks/classes';
+import { journeys } from '../../mocks/journeys';
 
 const JourneySelectionScreen = ({ user }) => {
     const navigate = useNavigate();

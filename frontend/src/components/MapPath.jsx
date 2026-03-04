@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
+const MapPath = ({ totalSessions = 10, currentSession = 1, onNodeClick }) => {
     // Cấu hình bản đồ ngang (Horizontal)
     const CONFIG = {
         HEIGHT: 500,            // Chiều cao tổng
@@ -161,9 +161,10 @@ const MapPath = ({ totalSessions = 10, currentSession = 1 }) => {
                 {pointsWithStatus.map((p) => (
                     <div
                         key={p.id}
+                        onClick={() => onNodeClick && onNodeClick(p.id)}
                         className={`
                         absolute w-16 h-16 -ml-8 -mt-8 rounded-full flex items-center justify-center 
-                        text-2xl font-black border-4 transition-transform duration-300 z-10
+                        text-2xl font-black border-4 transition-transform duration-300 z-10 cursor-pointer
                         ${getPointStyles(p.status)}
                     `}
                         style={{

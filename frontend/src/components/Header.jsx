@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Header = ({ centerName, user }) => {
     return (
@@ -14,7 +15,7 @@ const Header = ({ centerName, user }) => {
             </div>
 
             {/* Right: User Info */}
-            <div className="flex items-center gap-3 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-100">
+            <Link to="/profile" className="flex items-center gap-3 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors cursor-pointer">
                 <div className="text-right hidden sm:block">
                     <p className="text-sm font-bold text-gray-700 leading-tight">
                         {user?.full_name || "Nhà thám hiểm"}
@@ -30,7 +31,7 @@ const Header = ({ centerName, user }) => {
                         className="w-full h-full object-cover rounded-full"
                     />
                 </div>
-            </div>
+            </Link>
         </header>
     );
 };
