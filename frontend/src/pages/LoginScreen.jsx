@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { users } from '../mocks/users';
+import { logIn } from '../services/authService';
 import BackgroundDecor from '../components/BackgroundDecor';
 
 const LoginScreen = ({ onLogin }) => {
@@ -10,36 +10,42 @@ const LoginScreen = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
-        // Giả lập call API login
-        setTimeout(() => {
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                if (!user.isActive) {
-                    setError('Tài khoản của bạn đã bị khóa!');
-                    setIsLoading(false);
-                    return;
-                }
-                // Login thành công
-                // Login thành công
-                onLogin(user);
+        try {
+            // Gọi API thực tế
+            const response = await logIn(email, password);
+            
+            // Xử lý khi đăng nhập thành công
+            if (response.success) {
+                const user = response.user;
+                
+                // Cập nhật trạng thái App (nếu onLogin cần truyền object user)
+                if(onLogin) onLogin(user);
 
                 // Redirect based on role
-                if (user.role === 'Giáo viên') {
+                if (user.role === 'teacher') {
                     navigate('/teacher');
                 } else {
-                    navigate('/');
+                    navigate('/'); // Sinh viên hoặc general
                 }
             } else {
-                setError('Email hoặc mật khẩu không chính xác!');
-                setIsLoading(false);
+                 // Format trả về catch thông thường (có thể không chạy vào đây nếu throw lỗi từ server mã 4xx/5xx)
+                 setError(response.message || 'Đăng nhập không thành công.');
             }
-        }, 1000);
+        } catch (err) {
+            // Server báo lỗi 401, 400 hoặc hệ thống chết
+            if (err.response && err.response.data && err.response.data.message) {
+                setError(err.response.data.message);
+            } else {
+                setError('Email hoặc mật khẩu không chính xác!');
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

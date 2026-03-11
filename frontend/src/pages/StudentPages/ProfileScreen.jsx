@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import BackgroundDecor from '../../components/BackgroundDecor';
+import { clearAuthData } from '../../services/localStorageService';
 
 const ProfileScreen = ({ user, onLogout }) => {
     const navigate = useNavigate();
@@ -12,6 +13,9 @@ const ProfileScreen = ({ user, onLogout }) => {
     }
 
     const handleLogout = () => {
+        // Xoá mọi dữ liệu đăng nhập lưu dưới LocalStorage
+        clearAuthData();
+        
         if (onLogout) {
             onLogout();
         }
