@@ -90,7 +90,7 @@ jobs:
 
     env:
       PORT: ${{ vars.PORT || '3000' }}
-      MONGO_URI: ${{ vars.MONGO_URI }}
+      MONGO_URI: ${{ vars.MONGO_URI || secrets.MONGO_URI }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
 
