@@ -56,7 +56,7 @@ async function waitForHealth(serverProcess) {
 
 async function run() {
   if (!process.env.MONGO_URI) {
-    throw new Error('MONGO_URI is required for backend smoke check.');
+        throw new Error('MONGO_URI is required. Configure vars.MONGO_URI or secrets.MONGO_URI for this workflow environment.');
   }
 
   const serverProcess = spawn(process.execPath, ['src/app.js'], {
