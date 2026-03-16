@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node src/app.js",
-    "test": "jest"
+    "test": "jest",
+    "test:reflection": "jest --runTestsByPath test/reflectionController.test.js test/reflectionRoutes.test.js",
+    "seed:dev": "node scripts/seed-dev-data.cjs"
   },
   "author": "",
   "license": "ISC",
