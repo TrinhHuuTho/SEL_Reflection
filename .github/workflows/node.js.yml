@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
-      name: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
 
     services:
       mongodb:
@@ -82,7 +82,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     environment:
-      name: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
 
     defaults:
       run:
@@ -104,6 +104,22 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - name: Install Backend Dependencies
         run: npm ci
+      - name: Resolve Windows MONGO_URI
+        id: mongo_uri
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:MONGO_URI)) {
+            "available=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Warning "MONGO_URI is empty in this workflow environment. Windows backend runtime smoke will be skipped."
+          }
+          else {
+            "available=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "MONGO_URI detected. Windows backend runtime smoke will run."
+          }
       - name: Run Backend Smoke Check
+        if: steps.mongo_uri.outputs.available == 'true'
         run: node scripts/ci-smoke-backend.cjs
+      - name: Fallback Backend Syntax Check
+        if: steps.mongo_uri.outputs.available != 'true'
+        run: node --check src/app.js
 
