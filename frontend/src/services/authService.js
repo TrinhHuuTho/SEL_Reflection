@@ -5,11 +5,26 @@ import { setToken, setRefreshToken, setUser } from './localStorageService';
 // Định nghĩa các endpoint (đường dẫn API) để dễ quản lý và dễ đọc hơn
 const API = {
   LOGIN: '/auth/login',
-  REFRESH_TOKEN: 'http://localhost:3000/auth/refresh-token'
+  REFRESH_TOKEN: 'http://localhost:3000/auth/refresh-token',
+  CHANGE_PASSWORD: '/auth/change-password',
+  FORGOT_PASSWORD: '/auth/forgot-password'
+};
+
+export const forgotPassword = async (email) => {
+  const response = await axiosClient.post(API.FORGOT_PASSWORD, { email });
+  return response;
+};
+
+export const changePassword = async (email, oldPassword, newPassword) => {
+  const response = await axiosClient.post(API.CHANGE_PASSWORD, {
+    email: email,
+    oldPassword: oldPassword,
+    newPassword: newPassword,
+  });
+  return response;
 };
 
 export const logIn = async (email, password) => {
-  console.log(email, password);
 
   const response = await axiosClient.post(API.LOGIN, {
     email: email,

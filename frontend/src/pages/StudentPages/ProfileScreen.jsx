@@ -3,10 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import BackgroundDecor from '../../components/BackgroundDecor';
 import { clearAuthData } from '../../services/localStorageService';
+import { changePassword } from '../../services/authService';
 
 const ProfileScreen = ({ user, onLogout }) => {
     const navigate = useNavigate();
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    
+    // Các state quản lý đổi mật khẩu
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
 
     if (!user) {
         return <div className="text-center mt-20">Vui lòng đăng nhập!</div>;
@@ -20,6 +28,49 @@ const ProfileScreen = ({ user, onLogout }) => {
             onLogout();
         }
         navigate('/login');
+    };
+
+    const handleChangePassword = async () => {
+        setMessage({ text: '', type: '' });
+
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            setMessage({ text: 'Vui lòng điền đầy đủ các thông tin.', type: 'error' });
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setMessage({ text: 'Mật khẩu mới và xác nhận không khớp.', type: 'error' });
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const res = await changePassword(user.email, oldPassword, newPassword);
+            if (res.success) {
+                setMessage({ text: 'Đổi mật khẩu thành công! Bạn sẽ được đăng xuất sau 2 giây...', type: 'success' });
+                // Thay vì đóng vòng nhập thì gọi hàm logout
+                setTimeout(() => {
+                    handleLogout();
+                }, 2000);
+            } else {
+                setMessage({ text: res.message || 'Lỗi khi đổi mật khẩu.', type: 'error' });
+            }
+        } catch (error) {
+            const errMessage = error.response?.data?.message || 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.';
+            setMessage({ text: errMessage, type: 'error' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (isLoading) return;
+        setShowPasswordModal(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setMessage({ text: '', type: '' });
     };
 
     return (
@@ -63,7 +114,9 @@ const ProfileScreen = ({ user, onLogout }) => {
                                 <div>
                                     <p className="text-xs text-gray-400 font-bold uppercase">Ngày tham gia</p>
                                     <p className="text-brand-text font-medium">
-                                        {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                                        {user.created_at 
+                                            ? new Date(user.created_at).toLocaleDateString('vi-VN') 
+                                            : 'Đang cập nhật...'}
                                     </p>
                                 </div>
                             </div>
@@ -102,12 +155,20 @@ const ProfileScreen = ({ user, onLogout }) => {
                     <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
                         <h3 className="text-xl font-black text-brand-text mb-4 text-center">Đổi mật khẩu bảo vệ</h3>
 
+                        {message.text && (
+                            <div className={`mb-4 p-3 rounded-xl text-center text-sm font-bold ${message.type === 'error' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                {message.text}
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Mật khẩu hiện tại</label>
                                 <input
                                     type="password"
                                     placeholder="••••••"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
                                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-700 focus:outline-none focus:border-brand-primary focus:bg-white transition-all"
                                 />
                             </div>
@@ -117,6 +178,8 @@ const ProfileScreen = ({ user, onLogout }) => {
                                 <input
                                     type="password"
                                     placeholder="••••••"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
                                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-700 focus:outline-none focus:border-brand-primary focus:bg-white transition-all"
                                 />
                             </div>
@@ -126,6 +189,8 @@ const ProfileScreen = ({ user, onLogout }) => {
                                 <input
                                     type="password"
                                     placeholder="••••••"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-700 focus:outline-none focus:border-brand-primary focus:bg-white transition-all"
                                 />
                             </div>
@@ -133,16 +198,23 @@ const ProfileScreen = ({ user, onLogout }) => {
 
                         <div className="flex gap-3 mt-8">
                             <button
-                                onClick={() => setShowPasswordModal(false)}
-                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all"
+                                onClick={handleCloseModal}
+                                disabled={isLoading}
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
                             >
                                 Hủy bỏ
                             </button>
                             <button
-                                onClick={() => setShowPasswordModal(false)}
-                                className="flex-1 bg-brand-accent text-brand-text font-bold py-3 rounded-xl shadow-lg shadow-brand-accent/20 hover:bg-yellow-300 transition-all"
+                                onClick={handleChangePassword}
+                                disabled={isLoading}
+                                className="flex-1 bg-brand-accent text-brand-text font-bold py-3 rounded-xl shadow-lg shadow-brand-accent/20 hover:bg-yellow-300 transition-all disabled:opacity-50 flex items-center justify-center"
                             >
-                                Lưu thay đổi
+                                {isLoading ? (
+                                    <svg className="animate-spin h-5 w-5 text-gray-700" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                ) : "Lưu thay đổi"}
                             </button>
                         </div>
                     </div>

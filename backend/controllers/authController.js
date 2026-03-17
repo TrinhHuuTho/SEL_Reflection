@@ -41,19 +41,19 @@ exports.login = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { 
-        id: user._id, 
-        email: user.email, 
-        role: user.role 
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role
       },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
-      { 
-        id: user._id, 
-        email: user.email 
+      {
+        id: user._id,
+        email: user.email
       },
       process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
       { expiresIn: '7d' }
@@ -70,8 +70,8 @@ exports.login = async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        isActive: user.isActive
-
+        isActive: user.isActive,
+        created_at: user.created_at
       }
     });
   } catch (error) {
@@ -120,7 +120,7 @@ exports.forgotPassword = async (req, res) => {
 
     const templatePath = path.join(__dirname, '../templates/emails/forgotPassword.html');
     let emailHtml = await fs.readFile(templatePath, 'utf-8');
-    
+
     emailHtml = emailHtml.replaceAll('{{userName}}', user.full_name);
     emailHtml = emailHtml.replaceAll('{{newPassword}}', newPassword);
     emailHtml = emailHtml.replaceAll('{{currentYear}}', new Date().getFullYear());
@@ -248,10 +248,10 @@ exports.refreshToken = async (req, res) => {
     }
 
     const newAccessToken = jwt.sign(
-      { 
-        id: user._id, 
-        email: user.email, 
-        role: user.role 
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role
       },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '15m' }
