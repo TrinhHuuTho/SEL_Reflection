@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { users } from '../mocks/users';
+import { logIn, forgotPassword } from '../services/authService';
 import BackgroundDecor from '../components/BackgroundDecor';
 
 const LoginScreen = ({ onLogin }) => {
@@ -10,36 +10,78 @@ const LoginScreen = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    // State cho Quên mật khẩu
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotIsLoading, setForgotIsLoading] = useState(false);
+    const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
-        // Giả lập call API login
-        setTimeout(() => {
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                if (!user.isActive) {
-                    setError('Tài khoản của bạn đã bị khóa!');
-                    setIsLoading(false);
-                    return;
-                }
-                // Login thành công
-                // Login thành công
-                onLogin(user);
+        try {
+            // Gọi API thực tế
+            const response = await logIn(email, password);
+            
+            // Xử lý khi đăng nhập thành công
+            if (response.success) {
+                const user = response.user;
+                
+                // Cập nhật trạng thái App (nếu onLogin cần truyền object user)
+                if(onLogin) onLogin(user);
 
                 // Redirect based on role
-                if (user.role === 'Giáo viên') {
+                if (user.role === 'teacher') {
                     navigate('/teacher');
                 } else {
-                    navigate('/');
+                    navigate('/'); // Sinh viên hoặc general
                 }
             } else {
-                setError('Email hoặc mật khẩu không chính xác!');
-                setIsLoading(false);
+                 // Format trả về catch thông thường (có thể không chạy vào đây nếu throw lỗi từ server mã 4xx/5xx)
+                 setError(response.message || 'Đăng nhập không thành công.');
             }
-        }, 1000);
+        } catch (err) {
+            // Server báo lỗi 401, 400 hoặc hệ thống chết
+            if (err.response && err.response.data && err.response.data.message) {
+                setError(err.response.data.message);
+            } else {
+                setError('Email hoặc mật khẩu không chính xác!');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        setForgotMessage({ text: '', type: '' });
+        
+        if (!forgotEmail) {
+            setForgotMessage({ text: 'Vui lòng nhập email của bạn.', type: 'error' });
+            return;
+        }
+
+        setForgotIsLoading(true);
+        try {
+            const res = await forgotPassword(forgotEmail);
+            if (res.success) {
+                setForgotMessage({ text: res.message || 'Mật khẩu mới đã được gửi đến email của bạn.', type: 'success' });
+                // Đóng modal sau một khoảng thời gian
+                setTimeout(() => {
+                    setShowForgotModal(false);
+                    setForgotEmail('');
+                    setForgotMessage({ text: '', type: '' });
+                }, 3000);
+            } else {
+                setForgotMessage({ text: res.message || 'Lỗi khi yêu cầu đặt lại mật khẩu.', type: 'error' });
+            }
+        } catch (error) {
+            const errMessage = error.response?.data?.message || 'Đã xảy ra lỗi, vui lòng thử lại sau.';
+            setForgotMessage({ text: errMessage, type: 'error' });
+        } finally {
+            setForgotIsLoading(false);
+        }
     };
 
     return (
@@ -142,12 +184,74 @@ const LoginScreen = ({ onLogin }) => {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <a href="#" className="text-brand-primary hover:underline text-sm font-medium">
+                        <button 
+                            type="button" 
+                            onClick={() => setShowForgotModal(true)} 
+                            className="text-brand-primary hover:underline text-sm font-medium focus:outline-none"
+                        >
                             Quên mật khẩu?
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Forgot Password Modal */}
+            {showForgotModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+                        <h3 className="text-xl font-black text-brand-text mb-2 text-center">Quên mật khẩu?</h3>
+                        <p className="text-sm text-gray-500 text-center mb-6">
+                            Vui lòng nhập địa chỉ email của bạn. Chúng tôi sẽ gửi mật khẩu mới cho bạn.
+                        </p>
+
+                        {forgotMessage.text && (
+                            <div className={`mb-4 p-3 rounded-xl text-center text-sm font-bold ${forgotMessage.type === 'error' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                {forgotMessage.text}
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    value={forgotEmail}
+                                    onChange={(e) => setForgotEmail(e.target.value)}
+                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-700 focus:outline-none focus:border-brand-primary focus:bg-white transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                onClick={() => {
+                                    if(forgotIsLoading) return;
+                                    setShowForgotModal(false);
+                                    setForgotEmail('');
+                                    setForgotMessage({ text: '', type: '' });
+                                }}
+                                disabled={forgotIsLoading}
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                onClick={handleForgotPassword}
+                                disabled={forgotIsLoading}
+                                className="flex-1 bg-brand-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-primary/30 hover:bg-brand-secondary transition-all disabled:opacity-50 flex items-center justify-center"
+                            >
+                                {forgotIsLoading ? (
+                                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                ) : "Gửi email"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

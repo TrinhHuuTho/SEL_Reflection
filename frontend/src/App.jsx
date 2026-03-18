@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import MainGameScreen from "./pages/StudentPages/MainGameScreen"
 import LoginScreen from "./pages/LoginScreen"
@@ -9,11 +9,11 @@ import ClassManagementScreen from "./pages/TeacherPages/ClassManagementScreen"
 import JourneyDetailScreen from "./pages/TeacherPages/JourneyDetailScreen"
 import TeacherProfileScreen from "./pages/TeacherPages/TeacherProfileScreen"
 import StatisticsScreen from "./pages/TeacherPages/StatisticsScreen"
+import { getUser } from "./services/localStorageService"
 
 function App() {
-    // Simple state management for now. 
-    // In a real app, use Context or Redux/Zustand.
-    const [user, setUser] = useState(null);
+    // Tự động khôi phục user list từ LocalStorage khi khởi tạo app (F5 lại trang)
+    const [user, setUser] = useState(() => getUser());
 
     const handleLogin = (userData) => {
         setUser(userData);
@@ -32,12 +32,11 @@ function App() {
 
         // If roles are specified, check if user has required role
         if (allowedRoles && !allowedRoles.includes(user.role)) {
-            // If teacher tries to access student pages -> redirect to /teacher
-            if (user.role === 'Giáo viên') {
+            // Role theo chuẩn database trả về: "teacher" và "user"
+            if (user.role === 'teacher') {
                 return <Navigate to="/teacher" replace />;
             }
-            // If student tries to access teacher pages -> redirect to /
-            if (user.role === 'Học sinh') {
+            if (user.role === 'user' || user.role === 'Học sinh') {
                 return <Navigate to="/" replace />;
             }
         }
@@ -48,13 +47,23 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={<LoginScreen onLogin={handleLogin} />} />
+                {/* Nếu đã có user thì LoginScreen văng về trang chủ tuỳ theo role */}
+                <Route 
+                    path="/login" 
+                    element={
+                        user ? (
+                           <Navigate to={user.role === 'teacher' ? "/teacher" : "/"} replace />
+                        ) : (
+                           <LoginScreen onLogin={handleLogin} />
+                        )
+                    } 
+                />
 
                 {/* Student Routes */}
                 <Route
                     path="/"
                     element={
-                        <ProtectedRoute allowedRoles={['Học sinh']}>
+                        <ProtectedRoute allowedRoles={['user', 'Học sinh']}>
                             <JourneySelectionScreen user={user} />
                         </ProtectedRoute>
                     }
