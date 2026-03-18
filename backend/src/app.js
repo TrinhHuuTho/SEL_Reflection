@@ -4,6 +4,7 @@ const cors = require('cors');
 const connectDB = require('../config/db');
 const authRoutes = require('../routes/auth');
 const userRoutes = require('../routes/user');
+const reflectionRoutes = require('../routes/reflection');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/reflections', reflectionRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
