@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'teacher', 'admin'],
     default: 'user'
   },
   avatar: {
@@ -27,8 +27,7 @@ const userSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    enum: ['1', '0'],
-    default: '1'
+    default: true
   },
   created_at: {
     type: Date,
