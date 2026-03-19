@@ -270,11 +270,175 @@ exports.refreshToken = async (req, res) => {
         message: 'Refresh token không hợp lệ hoặc đã hết hạn'
       });
     }
+  }
+};
+
+// Đăng ký sinh viên
+exports.registerstudent = async (req, res) => {
+  try {
+    const { full_name, email, role } = req.body;
+
+    if (!full_name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ họ tên và email'
+      });
+    }
+
+    if (typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email không hợp lệ'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({email : normalizedEmail});
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email đã tồn tại trong hệ thống'
+      });
+    }
+
+    const generatedPassword = crypto.randomBytes(4).toString('hex');
+
+    const newUser = new User({
+      full_name: full_name.trim(),
+      email: normalizedEmail,
+      password: generatedPassword,
+      role: role || 'student '
+    });
+
+    await newUser.save();
+
+    const templatePath = path.join(__dirname, '../templates/emails/register.html');
+    let emailHtml = await fs.readFile(templatePath, 'utf-8');
+    
+    emailHtml = emailHtml.replaceAll('{{userName}}', newUser.full_name);
+    emailHtml = emailHtml.replaceAll('{{newPassword}}', generatedPassword);
+    emailHtml = emailHtml.replaceAll('{{currentYear}}', new Date().getFullYear());
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: normalizedEmail,
+      subject: 'Chào mừng bạn đến với SEL Reflection',
+      html: emailHtml
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công. Mật khẩu đã được gửi đến email của bạn',
+      user: {
+        id: newUser._id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Register error:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi làm mới token',
+      message: 'Lỗi khi đăng ký',
       error: error.message
     });
   }
 };
+
+// Đăng ký giáo viên
+exports.registerteacher = async (req, res) => {
+  try {
+    const { full_name, email, role } = req.body;
+
+    if (!full_name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ họ tên và email'
+      });
+    }
+
+    if (typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email không hợp lệ'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await User.findOne({email : normalizedEmail});
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email đã tồn tại trong hệ thống'
+      });
+    }
+
+    const generatedPassword = crypto.randomBytes(4).toString('hex');
+
+    const newUser = new User({
+      full_name: full_name.trim(),
+      email: normalizedEmail,
+      password: generatedPassword,
+      role: role || 'teacher'
+    });
+
+    await newUser.save();
+
+    const templatePath = path.join(__dirname, '../templates/emails/register.html');
+    let emailHtml = await fs.readFile(templatePath, 'utf-8');
+    
+    emailHtml = emailHtml.replaceAll('{{userName}}', newUser.full_name);
+    emailHtml = emailHtml.replaceAll('{{newPassword}}', generatedPassword);
+    emailHtml = emailHtml.replaceAll('{{currentYear}}', new Date().getFullYear());
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: normalizedEmail,
+      subject: 'Chào mừng bạn đến với SEL Reflection',
+      html: emailHtml
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công. Mật khẩu đã được gửi đến email của bạn',
+      user: {
+        id: newUser._id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi đăng ký',
+      error: error.message
+    });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: 'Đăng xuất thành công',
+      clearTokens: true 
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi đăng xuất',
+      error: error.message
+    });
+  }
+};
+
+
 

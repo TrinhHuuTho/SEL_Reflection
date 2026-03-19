@@ -34,7 +34,7 @@ const authenticateToken = (req, res, next) => {
 
 const isAdmin = (req, res, next) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'teacher') {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền truy cập'
