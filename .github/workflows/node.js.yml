@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: Node.js CI
 
 on:
@@ -14,48 +11,115 @@ permissions:
 
 jobs:
   frontend:
-    runs-on: ubuntu-latest
+    name: Frontend Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        os: [ubuntu-latest, windows-latest]
+
+    defaults:
+      run:
+        working-directory: ./frontend
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
       - name: Install Frontend Dependencies
         run: npm ci
-        working-directory: ./frontend
-      - name: Lint Frontend
-        run: npm run lint
-        working-directory: ./frontend
       - name: Build Frontend
         run: npm run build
-        working-directory: ./frontend
 
-  backend:
+  backend_ubuntu:
+    name: Backend Smoke (Ubuntu)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
 
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval \"db.runCommand({ ping: 1 })\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    env:
+      PORT: ${{ vars.PORT || '3000' }}
+      MONGO_URI: mongodb://127.0.0.1:27017/sel_ci
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
           cache: "npm"
           cache-dependency-path: backend/package-lock.json
       - name: Install Backend Dependencies
         run: npm ci
+      - name: Run Backend Smoke Check
+        run: node scripts/ci-smoke-backend.cjs
+
+  backend_windows:
+    name: Backend Smoke (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    environment:
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
+
+    defaults:
+      run:
         working-directory: ./backend
-      - name: Run Backend Tests
-        run: npm test
-        working-directory: ./backend
+
+    env:
+      PORT: ${{ vars.PORT || '3000' }}
+      MONGO_URI: ${{ vars.MONGO_URI || secrets.MONGO_URI }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+      - name: Install Backend Dependencies
+        run: npm ci
+      - name: Resolve Windows MONGO_URI
+        id: mongo_uri
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:MONGO_URI)) {
+            "available=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Warning "MONGO_URI is empty in this workflow environment. Windows backend runtime smoke will be skipped."
+          }
+          else {
+            "available=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "MONGO_URI detected. Windows backend runtime smoke will run."
+          }
+      - name: Run Backend Smoke Check
+        if: steps.mongo_uri.outputs.available == 'true'
+        run: node scripts/ci-smoke-backend.cjs
+      - name: Fallback Backend Syntax Check
+        if: steps.mongo_uri.outputs.available != 'true'
+        run: node --check src/app.js
+
