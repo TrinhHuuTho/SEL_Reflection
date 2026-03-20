@@ -17,7 +17,7 @@ export const users = [
         role: "Giáo viên",
         avatar: "https://i.pravatar.cc/150?u=trungtamCD",
         isActive: true,
-        created_at: "2023-01-01T00:00:00.000Z"
+        created_at: "2023-01-01T00:00:00.000Z",
     },
     {
         _id: "60d5ecb8b392d7001f8e8e9c",

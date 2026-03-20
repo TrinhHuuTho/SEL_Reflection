@@ -6,6 +6,8 @@ const authRoutes = require('../routes/auth');
 const userRoutes = require('../routes/user');
 const classRoutes = require('../routes/class');
 const coursesRoutes = require('../routes/courses');
+const centerRoutes = require('../routes/center');
+const userCenterRoutes = require('../routes/userCenter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,8 +25,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
-app.use('/class',classRoutes);
+app.use('/class', classRoutes);
 app.use('/courses', coursesRoutes);
+app.use('/center', centerRoutes);
+app.use('/user-center', userCenterRoutes);
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
 });

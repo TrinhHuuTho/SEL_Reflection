@@ -6,7 +6,7 @@ exports.getUserInformation = async (req, res) => {
     const userId = req.user.id;
 
     const user = await User.findById(userId).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -51,7 +51,7 @@ exports.changeUserInformation = async (req, res) => {
     const { full_name, avatar } = req.body;
 
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -100,6 +100,27 @@ exports.changeUserInformation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật thông tin người dùng',
+      error: error.message
+    });
+  }
+};
+
+// Lấy toàn bộ danh sách người dùng
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ created_at: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách người dùng thành công',
+      count: users.length,
+      data: users
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách người dùng',
       error: error.message
     });
   }

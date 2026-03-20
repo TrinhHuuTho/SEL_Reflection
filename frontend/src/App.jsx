@@ -9,6 +9,10 @@ import ClassManagementScreen from "./pages/TeacherPages/ClassManagementScreen"
 import JourneyDetailScreen from "./pages/TeacherPages/JourneyDetailScreen"
 import TeacherProfileScreen from "./pages/TeacherPages/TeacherProfileScreen"
 import StatisticsScreen from "./pages/TeacherPages/StatisticsScreen"
+import AdminLayout from "./pages/AdminPages/AdminLayout"
+import AdminOverview from "./pages/AdminPages/AdminOverview"
+import AdminUsersScreen from "./pages/AdminPages/AdminUsersScreen"
+import AdminCentersScreen from "./pages/AdminPages/AdminCentersScreen"
 import { getUser } from "./services/localStorageService"
 
 function App() {
@@ -32,7 +36,10 @@ function App() {
 
         // If roles are specified, check if user has required role
         if (allowedRoles && !allowedRoles.includes(user.role)) {
-            // Role theo chuẩn database trả về: "teacher" và "user"
+            // Role theo chuẩn database trả về: "teacher", "user", "admin"
+            if (user.role === 'admin') {
+                return <Navigate to="/admin" replace />;
+            }
             if (user.role === 'teacher') {
                 return <Navigate to="/teacher" replace />;
             }
@@ -52,7 +59,7 @@ function App() {
                     path="/login" 
                     element={
                         user ? (
-                           <Navigate to={user.role === 'teacher' ? "/teacher" : "/"} replace />
+                           <Navigate to={user.role === 'admin' ? "/admin" : (user.role === 'teacher' ? "/teacher" : "/")} replace />
                         ) : (
                            <LoginScreen onLogin={handleLogin} />
                         )
@@ -81,7 +88,7 @@ function App() {
                 <Route
                     path="/journey/:journeyId"
                     element={
-                        <ProtectedRoute allowedRoles={['Học sinh']}>
+                        <ProtectedRoute allowedRoles={['user', 'Học sinh']}>
                             <MainGameScreen />
                         </ProtectedRoute>
                     }
@@ -91,7 +98,7 @@ function App() {
                 <Route
                     path="/teacher"
                     element={
-                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                        <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
                             <TeacherDashboard user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
@@ -100,7 +107,7 @@ function App() {
                 <Route
                     path="/teacher/classes"
                     element={
-                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                        <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
                             <ClassManagementScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
@@ -109,7 +116,7 @@ function App() {
                 <Route
                     path="/teacher/journey/:journeyId"
                     element={
-                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                        <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
                             <JourneyDetailScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
@@ -118,7 +125,7 @@ function App() {
                 <Route
                     path="/teacher/profile"
                     element={
-                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                        <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
                             <TeacherProfileScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
@@ -127,11 +134,25 @@ function App() {
                 <Route
                     path="/teacher/statistics"
                     element={
-                        <ProtectedRoute allowedRoles={['Giáo viên']}>
+                        <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
                             <StatisticsScreen user={user} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Admin Routes */}
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminLayout user={user} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route index element={<AdminOverview />} />
+                    <Route path="users" element={<AdminUsersScreen />} />
+                    <Route path="centers" element={<AdminCentersScreen />} />
+                </Route>
 
                 {/* Catch all - redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
