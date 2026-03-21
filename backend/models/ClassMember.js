@@ -17,6 +17,7 @@ const classMemberSchema = new mongoose.Schema({
   }
 });
 
-classMemberSchema.index({ studentId: 1 }, { unique: true });
+// Chống trùng lặp 1 học sinh tham gia 1 lớp 2 lần
+classMemberSchema.index({ classId: 1, studentId: 1 }, { unique: true });
 
 module.exports = mongoose.model('ClassMember', classMemberSchema);

@@ -21,11 +21,6 @@ const userSchema = new mongoose.Schema({
     enum: ['student', 'teacher'],
     default: 'student'
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    default: null
-  },
   avatar: {
     type: String,
     default: 'default-avatar.png'
@@ -40,12 +35,12 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

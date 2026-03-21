@@ -4,11 +4,10 @@ import Header from '../../components/Header';
 import JourneyCard from '../../components/JourneyCard';
 import BackgroundDecor from '../../components/BackgroundDecor';
 
+import { getMyCenter } from '../../services/centerService';
+import { getMyClasses } from '../../services/classMemberService';
+
 // Mock Data
-import { user_center } from '../../mocks/user_center';
-import { centers } from '../../mocks/centers';
-import { class_members } from '../../mocks/class_members';
-import { classes } from '../../mocks/classes';
 import { journeys } from '../../mocks/journeys';
 
 const JourneySelectionScreen = ({ user }) => {
@@ -21,29 +20,37 @@ const JourneySelectionScreen = ({ user }) => {
     useEffect(() => {
         if (!user) return;
 
-        // 1. Get Center
-        const userCenterRelation = user_center.find(uc => uc.userId === user._id);
-        if (userCenterRelation) {
-            const foundCenter = centers.find(c => c._id === userCenterRelation.centerId);
-            setCenter(foundCenter);
-        }
-
-        // 2. Get Class
-        // Assumption: Mock data ensures one class per student per center logic for now
-        // Find linkage in class_members
-        const memberRelation = class_members.find(cm => cm.studentId === user._id);
-        if (memberRelation) {
-            const foundClass = classes.find(c => c._id === memberRelation.classId);
-            setClassInfo(foundClass);
-
-            // 3. Get Journeys based on class
-            if (foundClass) {
-                const classJourneys = journeys.filter(j => j.classId === foundClass._id && j.isActive);
-                setAvailableJourneys(classJourneys);
+        const loadData = async () => {
+            // 1. Get Center via API
+            try {
+                const centerRes = await getMyCenter();
+                if (centerRes.success && centerRes.data) {
+                    setCenter({ centerName: centerRes.data.centerName, _id: centerRes.data._id });
+                }
+            } catch (error) {
+                console.error("Failed to fetch user center:", error);
             }
-        }
 
-        setLoading(false);
+            // 2. Get Class via API
+            try {
+                const classRes = await getMyClasses();
+                if (classRes.success && classRes.data && classRes.data.length > 0) {
+                    // Cấu trúc mô phỏng: 1 học sinh ở 1 lớp trong 1 trung tâm
+                    const foundClass = classRes.data[0];
+                    setClassInfo(foundClass);
+
+                    // 3. Get Journeys based on class (Still using Mock)
+                    const classJourneys = journeys.filter(j => j.classId === foundClass._id && j.isActive);
+                    setAvailableJourneys(classJourneys);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user classes:", error);
+            }
+
+            setLoading(false);
+        };
+
+        loadData();
     }, [user]);
 
     if (loading) {

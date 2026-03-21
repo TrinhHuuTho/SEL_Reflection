@@ -7,7 +7,19 @@ const API = {
   LOGIN: '/auth/login',
   REFRESH_TOKEN: 'http://localhost:3000/auth/refresh-token',
   CHANGE_PASSWORD: '/auth/change-password',
-  FORGOT_PASSWORD: '/auth/forgot-password'
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  REGISTER_STUDENT: '/auth/register-student',
+  REGISTER_TEACHER: '/auth/register-teacher'
+};
+
+export const registerStudent = async (full_name, email, role = 'student', centerId = null) => {
+  const response = await axiosClient.post(API.REGISTER_STUDENT, { full_name, email, role, centerId });
+  return response;
+};
+
+export const registerTeacher = async (full_name, email, role = 'teacher', centerId = null) => {
+  const response = await axiosClient.post(API.REGISTER_TEACHER, { full_name, email, role, centerId });
+  return response;
 };
 
 export const forgotPassword = async (email) => {

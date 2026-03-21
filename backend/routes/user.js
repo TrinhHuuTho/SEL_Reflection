@@ -12,5 +12,7 @@ const userRateLimiter = rateLimit({
 router.post('/bulk', authenticateToken, isAdmin, userController.bulkCreateUsers);
 router.get('/information', userRateLimiter, authenticateToken, userController.getUserInformation);
 router.put('/change-information', userRateLimiter, authenticateToken, userController.changeUserInformation);
+// Lấy toàn danh sách user (yêu cầu xác thực token)
+router.get('/', userRateLimiter, authenticateToken, userController.getAllUsers);
 
 module.exports = router;
