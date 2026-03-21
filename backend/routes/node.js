@@ -28,8 +28,14 @@ const createNodeLimiter = rateLimit({
   max: 30, // limit each IP to 30 create requests per windowMs
 });
 
+// Rate limiter for getting a single node by ID
+const getNodeByIdLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 get-by-id requests per windowMs
+});
+
 router.get("/", authenticateToken, getNodesLimiter, nodeController.getNodes);
-router.get("/:id", authenticateToken, nodeController.getNodeById);
+router.get("/:id", authenticateToken, getNodeByIdLimiter, nodeController.getNodeById);
 
 router.post("/", authenticateToken, isAdmin, createNodeLimiter, nodeController.createNode);
 router.put("/:id", authenticateToken, isAdmin, updateNodeLimiter, nodeController.updateNode);
