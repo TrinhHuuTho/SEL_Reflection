@@ -307,7 +307,7 @@ exports.registerstudent = async (req, res) => {
       full_name: full_name.trim(),
       email: normalizedEmail,
       password: generatedPassword,
-      role: role || 'student '
+      role: role || 'student'
     });
 
     await newUser.save();
