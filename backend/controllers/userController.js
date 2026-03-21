@@ -1,5 +1,10 @@
 const User = require('../models/User');
 const UserCenter = require('../models/UserCenter');
+const EmailJob = require('../models/EmailJob');
+const transporter = require('../config/email');
+const crypto = require('node:crypto');
+const fs = require('node:fs').promises;
+const path = require('node:path');
 
 // Lấy thông tin người dùng
 exports.getUserInformation = async (req, res) => {
@@ -40,6 +45,125 @@ exports.getUserInformation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy thông tin người dùng',
+      error: error.message
+    });
+  }
+};
+// Bulk create users (teacher/admin only)
+exports.bulkCreateUsers = async (req, res) => {
+  try {
+    const { users } = req.body;
+
+    if (!Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp mảng users'
+      });
+    }
+
+    const registerTemplatePath = path.join(__dirname, '../templates/emails/register.html');
+    const registerTemplate = await fs.readFile(registerTemplatePath, 'utf-8');
+
+    const normalizedUsers = users.map((u) => ({
+      full_name: (u.full_name || '').trim(),
+      email: (u.email || '').toLowerCase().trim(),
+      role: (u.role || 'student').toLowerCase().trim()
+    }));
+
+    const inputEmails = normalizedUsers
+      .map((u) => u.email)
+      .filter(Boolean);
+
+    const existingUsers = await User.find({ email: { $in: inputEmails } }).select('email');
+    const existingEmails = new Set(existingUsers.map((u) => u.email));
+
+    const results = {
+      created: [],
+      errors: []
+    };
+
+    for (const userData of normalizedUsers) {
+      const { email, full_name, role } = userData;
+
+      if (!email || !full_name) {
+        results.errors.push({
+          email: email || null,
+          message: 'Thiếu email hoặc họ tên'
+        });
+        continue;
+      }
+
+      if (!email.includes('@')) {
+        results.errors.push({
+          email,
+          message: 'Email không hợp lệ'
+        });
+        continue;
+      }
+
+      if (existingEmails.has(email)) {
+        results.errors.push({
+          email,
+          message: 'Email đã tồn tại'
+        });
+        continue;
+      }
+
+      const generatedPassword = crypto.randomBytes(4).toString('hex');
+      const newUser = new User({
+        full_name,
+        email,
+        password: generatedPassword,
+        role: role === 'teacher' ? 'teacher' : 'student'
+      });
+
+      try {
+        await newUser.save();
+
+        const emailHtml = registerTemplate
+          .replaceAll('{{userName}}', newUser.full_name)
+          .replaceAll('{{newPassword}}', generatedPassword)
+          .replaceAll('{{currentYear}}', new Date().getFullYear());
+
+        try {
+          await EmailJob.create({
+            to: newUser.email,
+            subject: 'Chào mừng bạn đến với SEL Reflection',
+            html: emailHtml
+          });
+        } catch (jobError) {
+          results.errors.push({
+            email: newUser.email,
+            message: `Tạo user thành công nhưng tạo job gửi email thất bại: ${jobError.message}`
+          });
+        }
+
+        results.created.push({
+          id: newUser._id,
+          email: newUser.email,
+          full_name: newUser.full_name,
+          role: newUser.role,
+          temporaryPassword: generatedPassword
+        });
+        existingEmails.add(email);
+      } catch (saveError) {
+        results.errors.push({
+          email,
+          message: saveError.message
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Bulk create users completed',
+      data: results
+    });
+  } catch (error) {
+    console.error('Bulk create users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tạo danh sách người dùng',
       error: error.message
     });
   }

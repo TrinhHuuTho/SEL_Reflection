@@ -17,4 +17,8 @@ router.delete('/:id', authenticateToken, isAdmin, classController.deleteClass);
 // courses under class
 router.get('/:id/courses', authenticateToken, classController.getCoursesForClass);
 
+// new APIs
+router.post('/:id/add-students', authenticateToken, isAdmin, classController.addStudentsToClass);
+router.put('/:id/teacher', authenticateToken, isAdmin, classController.assignTeacherToClass);
+
 module.exports = router;

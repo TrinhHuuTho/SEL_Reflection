@@ -1,5 +1,7 @@
 const ClassModel = require('../models/Class');
 const Course = require('../models/Courses');
+const User = require('../models/User');
+const ClassMember = require('../models/ClassMember');
 
 exports.getClasses = async (req, res) => {
   try {
@@ -214,6 +216,133 @@ exports.changeClassInformation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật thông tin lớp',
+      error: error.message
+    });
+  }
+};
+
+exports.addStudentsToClass = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { studentIds } = req.body;
+
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp mảng studentIds'
+      });
+    }
+
+    const cls = await ClassModel.findById(id);
+    if (!cls) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy lớp học'
+      });
+    }
+
+    // Kiểm tra các studentIds có tồn tại và là student
+    const students = await User.find({
+      _id: { $in: studentIds },
+      role: 'student'
+    });
+
+    if (students.length !== studentIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Một số studentIds không hợp lệ hoặc không phải là học sinh'
+      });
+    }
+
+    const results = {
+      added: [],
+      errors: []
+    };
+
+    for (const studentId of studentIds) {
+      try {
+        // Kiểm tra đã thuộc class nào chưa
+        const existing = await ClassMember.findOne({ studentId });
+        if (existing) {
+          results.errors.push({
+            studentId,
+            message: 'Học sinh đã thuộc lớp khác'
+          });
+          continue;
+        }
+
+        const classMember = new ClassMember({
+          classId: id,
+          studentId
+        });
+
+        await classMember.save();
+        results.added.push(studentId);
+      } catch (error) {
+        results.errors.push({
+          studentId,
+          message: error.message
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Đã thêm ${results.added.length} học sinh vào lớp`,
+      data: results
+    });
+  } catch (error) {
+    console.error('Add students to class error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi thêm học sinh vào lớp',
+      error: error.message
+    });
+  }
+};
+
+exports.assignTeacherToClass = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { teacherId } = req.body;
+
+    if (!teacherId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp teacherId'
+      });
+    }
+
+    const cls = await ClassModel.findById(id);
+    if (!cls) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy lớp học'
+      });
+    }
+
+    const teacher = await User.findById(teacherId);
+    if (!teacher || teacher.role !== 'teacher') {
+      return res.status(400).json({
+        success: false,
+        message: 'TeacherId không hợp lệ hoặc không phải là giáo viên'
+      });
+    }
+
+    cls.teacher_id = teacherId;
+    cls.updated_at = Date.now();
+    await cls.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã gán giáo viên vào lớp thành công',
+      data: cls
+    });
+  } catch (error) {
+    console.error('Assign teacher to class error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi gán giáo viên vào lớp',
       error: error.message
     });
   }
