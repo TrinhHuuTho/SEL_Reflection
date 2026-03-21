@@ -10,6 +10,8 @@ const classRoutes = require('../routes/class');
 const coursesRoutes = require('../routes/courses');
 const centerRoutes = require('../routes/center');
 const { startEmailWorker } = require('./emailWorker');
+const nodeRoutes = require("../routes/node");
+const reflectionRoutes = require("../routes/reflection");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,10 +20,13 @@ const PORT = process.env.PORT || 3000;
   await connectDB();
   startEmailWorker();
 
-  app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-  }));
+// Cấu hình CORS cho phép frontend localhost:5173 truy cập
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true, // Cho phép gửi cookie/token
+  }),
+);
 
   app.use(session({
     secret: process.env.SESSION_SECRET || 'your-session-secret',
@@ -44,6 +49,8 @@ const PORT = process.env.PORT || 3000;
   app.use('/class', classRoutes);
   app.use('/courses', coursesRoutes);
   app.use('/center', centerRoutes);
+  app.use("/nodes", nodeRoutes);
+  app.use("/reflections", reflectionRoutes);
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}/`);
