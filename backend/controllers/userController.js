@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const UserCenter = require('../models/UserCenter');
 
 // Lấy thông tin người dùng
 exports.getUserInformation = async (req, res) => {
@@ -109,12 +110,28 @@ exports.changeUserInformation = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find({}).select('-password').sort({ created_at: -1 });
+    
+    // Fetch toàn bộ khoá ngoại UserCenter để map vào
+    const userCenters = await UserCenter.find({}).populate('centerId', 'centerName');
+    
+    const userCenterMap = {};
+    for (const uc of userCenters) {
+        if (uc.centerId && uc.centerId.centerName) {
+            userCenterMap[uc.userId.toString()] = uc.centerId.centerName;
+        }
+    }
+
+    const usersWithCenters = users.map(user => {
+        const uObj = user.toObject();
+        uObj.centerName = userCenterMap[user._id.toString()] || 'Chưa gán';
+        return uObj;
+    });
 
     res.status(200).json({
       success: true,
       message: 'Lấy danh sách người dùng thành công',
-      count: users.length,
-      data: users
+      count: usersWithCenters.length,
+      data: usersWithCenters
     });
   } catch (error) {
     console.error('Get all users error:', error);

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const UserCenter = require('../models/UserCenter');
 const transporter = require('../config/email');
 const crypto = require('node:crypto');
 const fs = require('node:fs').promises;
@@ -276,7 +277,7 @@ exports.refreshToken = async (req, res) => {
 // Đăng ký sinh viên
 exports.registerstudent = async (req, res) => {
   try {
-    const { full_name, email, role } = req.body;
+    const { full_name, email, role, centerId } = req.body;
 
     if (!full_name || !email) {
       return res.status(400).json({
@@ -311,6 +312,15 @@ exports.registerstudent = async (req, res) => {
     });
 
     await newUser.save();
+    
+    // Gán Trung tâm (nếu có cung cấp)
+    if (centerId) {
+        const newLink = new UserCenter({
+            userId: newUser._id,
+            centerId: centerId
+        });
+        await newLink.save();
+    }
 
     const templatePath = path.join(__dirname, '../templates/emails/register.html');
     let emailHtml = await fs.readFile(templatePath, 'utf-8');
@@ -351,7 +361,7 @@ exports.registerstudent = async (req, res) => {
 // Đăng ký giáo viên
 exports.registerteacher = async (req, res) => {
   try {
-    const { full_name, email, role } = req.body;
+    const { full_name, email, role, centerId } = req.body;
 
     if (!full_name || !email) {
       return res.status(400).json({
@@ -386,6 +396,15 @@ exports.registerteacher = async (req, res) => {
     });
 
     await newUser.save();
+
+    // Gán Trung tâm (nếu có cung cấp)
+    if (centerId) {
+        const newLink = new UserCenter({
+            userId: newUser._id,
+            centerId: centerId
+        });
+        await newLink.save();
+    }
 
     const templatePath = path.join(__dirname, '../templates/emails/register.html');
     let emailHtml = await fs.readFile(templatePath, 'utf-8');

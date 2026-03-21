@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { registerStudent, registerTeacher } from '../../services/authService';
 import { getAllUsers } from '../../services/userService';
+import { getAllCenters } from '../../services/centerService';
 
 const AdminUsersScreen = () => {
     // State lưu DB thật
@@ -16,23 +17,33 @@ const AdminUsersScreen = () => {
         full_name: '',
         email: '',
         role: 'Học sinh',
+        centerId: '', // Thêm trường dữ liệu chọn Trung tâm
     });
+    const [centersList, setCentersList] = useState([]);
 
     useEffect(() => {
-        const loadUsers = async () => {
+        const loadInitialData = async () => {
             setIsFetching(true);
             try {
-                const res = await getAllUsers();
-                if (res.success) {
-                    setUserList(res.data);
+                // Tải danh sách User song song cùng danh sách chi nhánh Trung tâm (cho hộp Dropdown)
+                const [usersRes, centersRes] = await Promise.all([
+                    getAllUsers(),
+                    getAllCenters()
+                ]);
+
+                if (usersRes.success) {
+                    setUserList(usersRes.data);
+                }
+                if (centersRes.success) {
+                    setCentersList(centersRes.data || []);
                 }
             } catch (error) {
-                console.error("Lỗi khi fetch users:", error);
+                console.error("Lỗi khi fetch data:", error);
             } finally {
                 setIsFetching(false);
             }
         };
-        loadUsers();
+        loadInitialData();
     }, []);
 
     const handleAddUser = async (e) => {
@@ -44,17 +55,20 @@ const AdminUsersScreen = () => {
         try {
             let res;
             if (form.role === 'Học sinh') {
-                res = await registerStudent(form.full_name, form.email, 'student');
+                res = await registerStudent(form.full_name, form.email, 'student', form.centerId);
             } else {
-                res = await registerTeacher(form.full_name, form.email, 'teacher');
+                res = await registerTeacher(form.full_name, form.email, 'teacher', form.centerId);
             }
 
             if (res.success) {
+                const centerNameSelected = centersList.find(c => c._id === form.centerId)?.centerName || 'Chưa gán';
+
                 const newUser = {
                     _id: res.user.id,
                     full_name: res.user.full_name,
                     email: res.user.email,
                     role: form.role === 'Học sinh' ? 'student' : 'teacher',
+                    centerName: centerNameSelected,
                     created_at: new Date().toISOString()
                 };
 
@@ -63,7 +77,7 @@ const AdminUsersScreen = () => {
                 
                 setTimeout(() => {
                     setShowModal(false);
-                    setForm({ full_name: '', email: '', role: 'Học sinh' });
+                    setForm({ full_name: '', email: '', role: 'Học sinh', centerId: '' });
                     setMessage({ text: '', type: '' });
                 }, 2000);
             } else {
@@ -130,13 +144,14 @@ const AdminUsersScreen = () => {
                             <th className="p-4">Họ và Tên</th>
                             <th className="p-4">Email</th>
                             <th className="p-4">Vai trò</th>
+                            <th className="p-4">Trung tâm</th>
                             <th className="p-4 text-center">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 table-fixed">
                         {isFetching ? (
                             <tr>
-                                <td colSpan="4" className="p-8 text-center text-gray-500">
+                                <td colSpan="5" className="p-8 text-center text-gray-500">
                                     <svg className="animate-spin h-6 w-6 text-brand-primary mx-auto mb-2" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -164,6 +179,13 @@ const AdminUsersScreen = () => {
                                         }`}>
                                             {user.role}
                                         </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <span className="max-w-[150px] truncate" title={user.centerName}>
+                                                {user.centerName || 'Chưa gán'}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <span className="text-green-500 font-bold bg-green-50 px-3 py-1 rounded-full text-xs">
@@ -237,6 +259,21 @@ const AdminUsersScreen = () => {
                                 >
                                     <option value="Học sinh">Học sinh</option>
                                     <option value="Giáo viên">Giáo viên</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-600 mb-1">Trực thuộc Trung tâm <span className="text-red-500">*</span></label>
+                                <select
+                                    required
+                                    value={form.centerId}
+                                    disabled={isLoading}
+                                    onChange={e => setForm({...form, centerId: e.target.value})}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:border-brand-primary focus:outline-none text-gray-700 disabled:opacity-50"
+                                >
+                                    <option value="" disabled>-- Hãy Chọn Trung Tâm --</option>
+                                    {centersList.map(center => (
+                                        <option key={center._id} value={center._id}>{center.centerName}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="flex gap-3 pt-4">

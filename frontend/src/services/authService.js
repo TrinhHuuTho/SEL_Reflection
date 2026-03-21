@@ -12,13 +12,13 @@ const API = {
   REGISTER_TEACHER: '/auth/register-teacher'
 };
 
-export const registerStudent = async (full_name, email, role) => {
-  const response = await axiosClient.post(API.REGISTER_STUDENT, { full_name, email, role });
+export const registerStudent = async (full_name, email, role = 'student', centerId = null) => {
+  const response = await axiosClient.post(API.REGISTER_STUDENT, { full_name, email, role, centerId });
   return response;
 };
 
-export const registerTeacher = async (full_name, email, role) => {
-  const response = await axiosClient.post(API.REGISTER_TEACHER, { full_name, email, role });
+export const registerTeacher = async (full_name, email, role = 'teacher', centerId = null) => {
+  const response = await axiosClient.post(API.REGISTER_TEACHER, { full_name, email, role, centerId });
   return response;
 };
 
