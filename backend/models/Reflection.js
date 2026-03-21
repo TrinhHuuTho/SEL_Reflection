@@ -1,50 +1,52 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const EMOTION_VALUES = ['happy', 'sad', 'neutral', 'confused', 'angry'];
+const EMOTION_VALUES = ["happy", "sad", "neutral", "confused", "angry"];
 
 const reflectionSchema = new mongoose.Schema(
   {
-    userId: {
+    studentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
-      index: true
-    },
-    journeyId: {
-      type: String,
-      required: true,
-      trim: true,
-      index: true
+      index: true,
     },
     nodeId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Node",
       required: true,
-      trim: true,
-      index: true
+      index: true,
     },
     content: {
       type: String,
       required: true,
       trim: true,
       minlength: 10,
-      maxlength: 500
+      maxlength: 500,
     },
     emotion: {
       type: String,
       enum: EMOTION_VALUES,
-      default: null
+      default: null,
     },
-    visibility: {
+    character: {
       type: String,
-      enum: ['public', 'private'],
-      default: 'public'
-    }
+      trim: true,
+      default: null,
+    },
+    isPrivate: {
+      type: Boolean,
+      default: false,
+    },
+    version: {
+      type: Number,
+      default: 0,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
 );
 
-reflectionSchema.index({ userId: 1, journeyId: 1, nodeId: 1 }, { unique: true });
+reflectionSchema.index({ studentId: 1, nodeId: 1 }, { unique: true });
 
-module.exports = mongoose.model('Reflection', reflectionSchema);
+module.exports = mongoose.model("Reflection", reflectionSchema);
