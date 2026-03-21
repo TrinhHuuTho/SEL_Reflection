@@ -4,6 +4,12 @@ const nodeController = require("../controllers/nodeController");
 const { authenticateToken, isAdmin } = require("../middlewares/auth");
 const rateLimit = require("express-rate-limit");
 
+// Rate limiter for listing node operations
+const getNodesLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 list requests per windowMs
+});
+
 // Rate limiter for destructive node operations
 const deleteNodeLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
@@ -22,7 +28,7 @@ const createNodeLimiter = rateLimit({
   max: 30, // limit each IP to 30 create requests per windowMs
 });
 
-router.get("/", authenticateToken, nodeController.getNodes);
+router.get("/", authenticateToken, getNodesLimiter, nodeController.getNodes);
 router.get("/:id", authenticateToken, nodeController.getNodeById);
 
 router.post("/", authenticateToken, isAdmin, createNodeLimiter, nodeController.createNode);
