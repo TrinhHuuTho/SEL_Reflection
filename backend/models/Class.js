@@ -10,7 +10,8 @@ const classSchema = new mongoose.Schema({
     required: true
   },
   centerId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Center',
     required: true
   },
   teacher_id: {
@@ -28,4 +29,4 @@ const classSchema = new mongoose.Schema({
   }
 });
 
-    module.exports = mongoose.model('Class', classSchema);
+module.exports = mongoose.model('Class', classSchema);

@@ -18,8 +18,13 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['student ', 'teacher'],
-    default: 'student '
+    enum: ['student', 'teacher'],
+    default: 'student'
+  },
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    default: null
   },
   avatar: {
     type: String,
