@@ -34,16 +34,16 @@ const getNodeByIdLimiter = rateLimit({
   max: 60, // limit each IP to 60 get-by-id requests per windowMs
 });
 
-router.get("/", authenticateToken, getNodesLimiter, nodeController.getNodes);
-router.get("/:id", authenticateToken, getNodeByIdLimiter, nodeController.getNodeById);
+router.get("/", getNodesLimiter, authenticateToken, nodeController.getNodes);
+router.get("/:id", getNodeByIdLimiter, authenticateToken, nodeController.getNodeById);
 
-router.post("/", authenticateToken, isAdmin, createNodeLimiter, nodeController.createNode);
-router.put("/:id", authenticateToken, isAdmin, updateNodeLimiter, nodeController.updateNode);
+router.post("/", createNodeLimiter, authenticateToken, isAdmin, nodeController.createNode);
+router.put("/:id", updateNodeLimiter, authenticateToken, isAdmin, nodeController.updateNode);
 router.delete(
   "/:id",
+  deleteNodeLimiter,
   authenticateToken,
   isAdmin,
-  deleteNodeLimiter,
   nodeController.deleteNode
 );
 
