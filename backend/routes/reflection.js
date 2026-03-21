@@ -13,26 +13,26 @@ const reflectionLimiter = rateLimit({
 
 router.post(
   "/",
-  authenticateToken,
   reflectionLimiter,
+  authenticateToken,
   reflectionController.createReflection,
 );
 router.get(
   "/node/:nodeId",
-  authenticateToken,
   reflectionLimiter,
+  authenticateToken,
   reflectionController.getReflectionsByNode,
 );
 router.patch(
   "/:id",
-  authenticateToken,
   reflectionLimiter,
+  authenticateToken,
   reflectionController.updateReflectionById,
 );
 router.delete(
   "/:id",
-  authenticateToken,
   reflectionLimiter,
+  authenticateToken,
   reflectionController.deleteReflectionById,
 );
 
