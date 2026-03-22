@@ -16,15 +16,6 @@ const nodeSchema = new mongoose.Schema(
     order: {
       type: Number,
       required: true,
-      min: 1,
-    },
-    positionX: {
-      type: Number,
-      default: 0,
-    },
-    positionY: {
-      type: Number,
-      default: 0,
     },
     description: {
       type: String,
@@ -33,7 +24,7 @@ const nodeSchema = new mongoose.Schema(
     },
     isOpen: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {

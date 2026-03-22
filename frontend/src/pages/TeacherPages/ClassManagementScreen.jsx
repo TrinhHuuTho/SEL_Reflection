@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMyCenter } from '../../services/centerService';
 import { getClasses, createClass } from '../../services/classService';
 import { getMembersByClass, addStudentToClass, removeStudentFromClass, getAvailableStudents } from '../../services/classMemberService';
-import { journeys } from '../../mocks/journeys';
+import { createCourse, getCourses } from '../../services/courseService';
 
 const ClassManagementScreen = ({ user, onLogout }) => {
     const navigate = useNavigate();
@@ -30,6 +30,12 @@ const ClassManagementScreen = ({ user, onLogout }) => {
     const [newClassData, setNewClassData] = useState({ class_name: '', description: '' });
     const [isCreating, setIsCreating] = useState(false);
 
+    // Add Journey State
+    const [showAddJourneyModal, setShowAddJourneyModal] = useState(false);
+    const [newJourneyData, setNewJourneyData] = useState({ title: '', description: '' });
+    const [selectedTargetClassIdForJourney, setSelectedTargetClassIdForJourney] = useState(null);
+    const [isCreatingJourney, setIsCreatingJourney] = useState(false);
+
     useEffect(() => {
         if (user) {
             fetchInitialData();
@@ -55,9 +61,16 @@ const ClassManagementScreen = ({ user, onLogout }) => {
             const classRes = await getClasses({ centerId: cId, teacher_id: teacherId });
             
             if (classRes.success) {
-                // Tạm thời vẫn ghép mảng Journey Mock vào cho UI không hỏng
-                const classesWithJourneys = classRes.data.map(cls => {
-                    const classJourneys = journeys.filter(j => j.classId === cls._id);
+                const fetchedClasses = classRes.data;
+
+                // Fetch song song danh sách Hành trình (Courses/Journeys) của TẤT CẢ các lớp
+                const journeyPromises = fetchedClasses.map(cls => getCourses(cls._id));
+                const journeyResults = await Promise.all(journeyPromises);
+
+                // Dán array journeys thật từ DB vô mỗi Lớp
+                const classesWithJourneys = fetchedClasses.map((cls, idx) => {
+                    const res = journeyResults[idx];
+                    const classJourneys = (res && res.success && res.data) ? res.data : [];
                     return { ...cls, journeys: classJourneys };
                 });
                 
@@ -136,6 +149,47 @@ const ClassManagementScreen = ({ user, onLogout }) => {
             alert(error.response?.data?.message || "Lỗi máy chủ rớt mạng (Server config)");
         } finally {
             setIsCreating(false);
+        }
+    };
+
+    const handleAddJourneySubmit = async () => {
+        if (!newJourneyData.title.trim() || !newJourneyData.description.trim()) {
+            alert('Vui lòng nhập tên và mô tả cho chủ đề/hành trình!');
+            return;
+        }
+
+        setIsCreatingJourney(true);
+        try {
+            const formData = {
+                title: newJourneyData.title.trim(),
+                description: newJourneyData.description.trim(),
+                classId: selectedTargetClassIdForJourney,
+                isActive: true
+            };
+
+            const res = await createCourse(formData);
+            if (res.success && res.data) {
+                // Thêm data Khóa học vừa tạo thành công vào Cấu trúc mảng state ảo hiện hành
+                setCenterClasses(prevClasses => prevClasses.map(cls => {
+                    if (cls._id === selectedTargetClassIdForJourney) {
+                        return {
+                            ...cls,
+                            journeys: [...cls.journeys, res.data]
+                        };
+                    }
+                    return cls;
+                }));
+
+                setShowAddJourneyModal(false);
+                setNewJourneyData({ title: '', description: '' });
+            } else {
+                alert(res.message || 'Lỗi tạo hành trình mờ mịt');
+            }
+        } catch (error) {
+            console.error('Lỗi khi Tạo Hành trình API:', error);
+            alert(error.response?.data?.message || 'Có lỗi máy chủ API!');
+        } finally {
+            setIsCreatingJourney(false);
         }
     };
 
@@ -266,6 +320,50 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                     className="px-4 py-2 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-secondary transition-colors shadow-sm disabled:opacity-50"
                                 >
                                     {isCreating ? 'Đang tạo...' : 'Tạo lớp'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Journey Modal */}
+            {showAddJourneyModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slideUp relative">
+                        <div className="bg-brand-primary p-4 flex justify-between items-center text-white">
+                            <h3 className="text-lg font-bold">Thêm Hành trình mới</h3>
+                            <button onClick={() => setShowAddJourneyModal(false)} className="hover:bg-white/20 p-1 rounded-full text-xl leading-none transition-colors">&times;</button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tên hành trình / Chủ đề</label>
+                                <input
+                                    type="text"
+                                    value={newJourneyData.title}
+                                    onChange={(e) => setNewJourneyData({ ...newJourneyData, title: e.target.value })}
+                                    placeholder="Ví dụ: Cảm xúc Mùa thu"
+                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                                <textarea
+                                    value={newJourneyData.description}
+                                    onChange={(e) => setNewJourneyData({ ...newJourneyData, description: e.target.value })}
+                                    rows={3}
+                                    placeholder="Mô tả nội dung học tập..."
+                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none"
+                                />
+                            </div>
+                            <div className="flex gap-3 justify-end mt-4">
+                                <button onClick={() => setShowAddJourneyModal(false)} disabled={isCreatingJourney} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">Hủy</button>
+                                <button
+                                    disabled={isCreatingJourney}
+                                    onClick={handleAddJourneySubmit}
+                                    className="px-4 py-2 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-secondary transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                    {isCreatingJourney ? 'Đang tạo...' : 'Tạo hành trình'}
                                 </button>
                             </div>
                         </div>
@@ -430,7 +528,19 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                 
                                                 {/* Tab HÀNH TRÌNH */}
                                                 {activeTabs[cls._id] === 'journeys' && (
-                                                    <div className="space-y-1">
+                                                    <div className="p-2">
+                                                        <div className="flex justify-end mb-3">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    setSelectedTargetClassIdForJourney(cls._id);
+                                                                    setShowAddJourneyModal(true);
+                                                                }}
+                                                                className="px-3 py-1.5 bg-blue-50 text-brand-primary hover:bg-brand-primary hover:text-white rounded text-sm font-bold border border-blue-200 hover:border-transparent transition-colors flex items-center gap-1"
+                                                            >
+                                                                <span>➕Thêm hành trình</span>
+                                                            </button>
+                                                        </div>
+                                                        <div className="space-y-1">
                                                         {cls.journeys.length === 0 ? (
                                                             <div className="p-4 text-center text-sm text-gray-400 italic bg-gray-50/50 rounded-lg m-2 border border-dashed border-gray-200">
                                                                 Chưa có bài học / hành trình nào.
@@ -459,6 +569,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                                 </div>
                                                             ))
                                                         )}
+                                                        </div>
                                                     </div>
                                                 )}
 

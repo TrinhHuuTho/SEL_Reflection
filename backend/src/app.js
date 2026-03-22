@@ -14,6 +14,7 @@ const coursesRoutes = require('../routes/courses');
 const centerRoutes = require('../routes/center');
 const userCenterRoutes = require('../routes/userCenter');
 const classMemberRoutes = require('../routes/classMember');
+const nodeRoutes = require('../routes/node');
 
 // Worker
 const { startEmailWorker } = require('./emailWorker');
@@ -62,6 +63,7 @@ const PORT = process.env.PORT || 3000;
     app.use('/center', centerRoutes);
     app.use('/user-center', userCenterRoutes);
     app.use('/class-member', classMemberRoutes);
+    app.use('/nodes', nodeRoutes);
 
     // Start server
     app.listen(PORT, () => {

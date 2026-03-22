@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { journeys } from '../../mocks/journeys';
-import { nodes } from '../../mocks/nodes';
+import { getCourseById } from '../../services/courseService';
+import { getNodesByCourse, createNode, updateNode, updateNodesOrder } from '../../services/nodeService';
 
 const JourneyDetailScreen = ({ user, onLogout }) => {
     const { journeyId } = useParams();
@@ -16,16 +16,27 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
 
     useEffect(() => {
         if (journeyId) {
-            // 1. Find the journey
-            const foundJourney = journeys.find(j => j._id === journeyId);
-            setJourney(foundJourney);
-
-            // 2. Filter and sort nodes by order
-            const filteredNodes = nodes.filter(n => n.journeyId === journeyId)
-                .sort((a, b) => a.order - b.order);
-            setJourneyNodes(filteredNodes);
+            fetchJourneyDetails();
         }
     }, [journeyId]);
+
+    const fetchJourneyDetails = async () => {
+        try {
+            // 1. Fetch Tựa đề Khóa học
+            const courseRes = await getCourseById(journeyId); 
+            if (courseRes.success && courseRes.data) {
+                setJourney(courseRes.data);
+            }
+            
+            // 2. Fetch danh sách Nodes
+            const nodesRes = await getNodesByCourse(journeyId);
+            if (nodesRes.success && nodesRes.data) {
+                setJourneyNodes(nodesRes.data);
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+        }
+    };
 
     const handleLogout = () => {
         if (onLogout) onLogout();
@@ -42,12 +53,11 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
     const handleAddNewNode = () => {
         const newNode = {
             _id: `temp-${Date.now()}`, // Temporary ID
-            journeyId: journeyId,
+            courseId: journeyId,
             title: '',
             description: '',
-            order: journeyNodes.length + 1,
-            isOpen: false,
-            createdAt: new Date().toISOString()
+            /* Order sẽ do Backend tự lo liệu */
+            isOpen: false
         };
         setSelectedNode(newNode);
         setShowEditModal(true);
@@ -59,29 +69,37 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
     };
 
     // Save function (Create or Update)
-    const handleSaveNode = () => {
+    const handleSaveNode = async () => {
         if (!selectedNode.title.trim()) {
             alert("Vui lòng nhập tiêu đề!");
             return;
         }
 
-        // Check if it's a new node (by checking if ID exists in current list)
-        const existingNodeIndex = journeyNodes.findIndex(n => n._id === selectedNode._id);
-
-        let updatedNodes;
-        if (existingNodeIndex >= 0) {
-            // Update existing
-            updatedNodes = [...journeyNodes];
-            updatedNodes[existingNodeIndex] = selectedNode;
-        } else {
-            // Add new
-            updatedNodes = [...journeyNodes, selectedNode];
+        try {
+            const isNew = selectedNode._id.startsWith('temp-');
+            
+            if (isNew) {
+                const { _id, ...nodeData } = selectedNode;
+                const res = await createNode(nodeData);
+                if (res.success && res.data) {
+                    setJourneyNodes([...journeyNodes, res.data]);
+                } else {
+                    alert(res.message);
+                }
+            } else {
+                const res = await updateNode(selectedNode._id, selectedNode);
+                if (res.success && res.data) {
+                    const updatedNodes = journeyNodes.map(n => n._id === selectedNode._id ? res.data : n);
+                    setJourneyNodes(updatedNodes);
+                } else {
+                    alert(res.message);
+                }
+            }
+            closeEditModal();
+        } catch (error) {
+            console.error("Lỗi khi lưu node:", error);
+            alert(error.response?.data?.message || "Đã xảy ra lỗi khi lưu bài học!");
         }
-
-        setJourneyNodes(updatedNodes);
-        closeEditModal();
-
-        // In a real app, this would trigger an API call
     };
 
 
@@ -117,12 +135,11 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
         const [movedNode] = updatedNodes.splice(sourceIndex, 1);
         updatedNodes.splice(targetIndex, 0, movedNode);
 
-        // Update local state immediately for UI 
-        setJourneyNodes(updatedNodes);
-        setDraggedNode(null);
+        // Update local array with new sequential order
+        const reorderedNodes = updatedNodes.map((n, idx) => ({ ...n, order: idx + 1 }));
 
-        // In a real app, we would also update the 'order' property for each node 
-        // and send the new order to the backend here.
+        setJourneyNodes(reorderedNodes);
+        setDraggedNode(null);
     };
 
     if (!journey) {
@@ -208,7 +225,21 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
 
                     {/* Edit Mode Toggle Button */}
                     <button
-                        onClick={() => setIsEditing(!isEditing)}
+                        onClick={async () => {
+                            if (isEditing) {
+                                // Tắt Edit -> Save To Server Bulk
+                                try {
+                                    const orderPayload = journeyNodes.map((n) => ({ _id: n._id, order: n.order }));
+                                    if (orderPayload.length > 0) {
+                                        await updateNodesOrder(journeyId, orderPayload);
+                                    }
+                                } catch (error) {
+                                    console.error("Save reorder failed", error);
+                                    alert("Lưu thứ tự thất bại, vui lòng tải lại trang.");
+                                }
+                            }
+                            setIsEditing(!isEditing);
+                        }}
                         className={`
                             px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2
                             ${isEditing

@@ -6,9 +6,7 @@ import BackgroundDecor from '../../components/BackgroundDecor';
 
 import { getMyCenter } from '../../services/centerService';
 import { getMyClasses } from '../../services/classMemberService';
-
-// Mock Data
-import { journeys } from '../../mocks/journeys';
+import { getCourses } from '../../services/courseService';
 
 const JourneySelectionScreen = ({ user }) => {
     const navigate = useNavigate();
@@ -39,9 +37,12 @@ const JourneySelectionScreen = ({ user }) => {
                     const foundClass = classRes.data[0];
                     setClassInfo(foundClass);
 
-                    // 3. Get Journeys based on class (Still using Mock)
-                    const classJourneys = journeys.filter(j => j.classId === foundClass._id && j.isActive);
-                    setAvailableJourneys(classJourneys);
+                    // 3. Get Journeys based on class (API)
+                    const coursesRes = await getCourses(foundClass._id);
+                    if (coursesRes.success && coursesRes.data) {
+                        const classJourneys = coursesRes.data.filter(j => j.isActive);
+                        setAvailableJourneys(classJourneys);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch user classes:", error);
