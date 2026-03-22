@@ -19,7 +19,7 @@ exports.sendEmail = async (req, res) => {
       html: html
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = transporter.sendMail(mailOptions);
 
     res.status(200).json({
       success: true,
