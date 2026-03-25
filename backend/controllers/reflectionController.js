@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const Reflection = require("../models/Reflection");
 
-const EMOTION_VALUES = ["happy", "sad", "neutral", "confused", "angry"];
-
 const normalizeString = (value) =>
   typeof value === "string" ? value.trim() : "";
 
@@ -37,11 +35,9 @@ const serializeReflection = (reflection) => {
     id: reflection._id,
     studentId: ownerId,
     nodeId: reflection.nodeId,
+    questionId: reflection.questionId,
     content: reflection.content,
-    emotion: reflection.emotion,
-    character: reflection.character,
     isPrivate: reflection.isPrivate,
-    version: reflection.version,
     createdAt: reflection.createdAt,
     updatedAt: reflection.updatedAt,
     author: hasAuthorObject
@@ -58,23 +54,22 @@ const serializeReflection = (reflection) => {
 exports.createReflection = async (req, res) => {
   try {
     const nodeId = normalizeString(req.body.nodeId);
+    const questionId = normalizeString(req.body.questionId);
     const content = normalizeString(req.body.content);
-    const emotion = normalizeString(req.body.emotion);
-    const character = normalizeString(req.body.character);
     const isPrivate =
       req.body.isPrivate !== undefined ? Boolean(req.body.isPrivate) : false;
 
-    if (!nodeId || !content) {
+    if (!nodeId || !questionId || !content) {
       return res.status(400).json({
         success: false,
-        message: "nodeId va content la bat buoc",
+        message: "nodeId, questionId va content la bat buoc",
       });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(nodeId)) {
+    if (!mongoose.Types.ObjectId.isValid(nodeId) || !mongoose.Types.ObjectId.isValid(questionId)) {
       return res.status(400).json({
         success: false,
-        message: "nodeId khong hop le",
+        message: "nodeId hoac questionId khong hop le",
       });
     }
 
@@ -85,19 +80,11 @@ exports.createReflection = async (req, res) => {
       });
     }
 
-    if (emotion && !EMOTION_VALUES.includes(emotion)) {
-      return res.status(400).json({
-        success: false,
-        message: `emotion khong hop le. Cho phep: ${EMOTION_VALUES.join(", ")}`,
-      });
-    }
-
     const reflection = new Reflection({
       studentId: req.user.id,
       nodeId,
+      questionId,
       content,
-      emotion: emotion || null,
-      character: character || null,
       isPrivate,
     });
 
@@ -112,7 +99,7 @@ exports.createReflection = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "Reflection cho node nay da ton tai. Hay dung API cap nhat.",
+        message: "Ban da nop ban Reflection cho cau hoi nay roi. Hay dung API cap nhat.",
       });
     }
 
@@ -195,12 +182,6 @@ exports.updateReflectionById = async (req, res) => {
 
     const nextContent =
       req.body.content !== undefined ? normalizeString(req.body.content) : null;
-    const nextEmotion =
-      req.body.emotion !== undefined ? normalizeString(req.body.emotion) : null;
-    const nextCharacter =
-      req.body.character !== undefined
-        ? normalizeString(req.body.character)
-        : null;
     const nextIsPrivate =
       req.body.isPrivate !== undefined ? Boolean(req.body.isPrivate) : null;
 
@@ -215,29 +196,12 @@ exports.updateReflectionById = async (req, res) => {
       reflection.content = nextContent;
     }
 
-    if (nextEmotion !== null) {
-      if (nextEmotion && !EMOTION_VALUES.includes(nextEmotion)) {
-        return res.status(400).json({
-          success: false,
-          message: `emotion khong hop le. Cho phep: ${EMOTION_VALUES.join(", ")}`,
-        });
-      }
-
-      reflection.emotion = nextEmotion || null;
-    }
-
-    if (nextCharacter !== null) {
-      reflection.character = nextCharacter || null;
-    }
-
     if (nextIsPrivate !== null) {
       reflection.isPrivate = nextIsPrivate;
     }
 
     if (
       nextContent === null &&
-      nextEmotion === null &&
-      nextCharacter === null &&
       nextIsPrivate === null
     ) {
       return res.status(400).json({
@@ -245,8 +209,6 @@ exports.updateReflectionById = async (req, res) => {
         message: "Khong co truong hop le de cap nhat",
       });
     }
-
-    reflection.version = (reflection.version || 0) + 1;
 
     await reflection.save();
 

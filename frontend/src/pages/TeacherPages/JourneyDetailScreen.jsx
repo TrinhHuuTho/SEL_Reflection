@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { journeys } from '../../mocks/journeys';
-import { nodes } from '../../mocks/nodes';
+import { getCourseById } from '../../services/courseService';
+import { getNodesByCourse, createNode, updateNode, updateNodesOrder } from '../../services/nodeService';
 
 const JourneyDetailScreen = ({ user, onLogout }) => {
     const { journeyId } = useParams();
@@ -16,16 +16,27 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
 
     useEffect(() => {
         if (journeyId) {
-            // 1. Find the journey
-            const foundJourney = journeys.find(j => j._id === journeyId);
-            setJourney(foundJourney);
-
-            // 2. Filter and sort nodes by order
-            const filteredNodes = nodes.filter(n => n.journeyId === journeyId)
-                .sort((a, b) => a.order - b.order);
-            setJourneyNodes(filteredNodes);
+            fetchJourneyDetails();
         }
     }, [journeyId]);
+
+    const fetchJourneyDetails = async () => {
+        try {
+            // 1. Fetch Tựa đề Khóa học
+            const courseRes = await getCourseById(journeyId); 
+            if (courseRes.success && courseRes.data) {
+                setJourney(courseRes.data);
+            }
+            
+            // 2. Fetch danh sách Nodes
+            const nodesRes = await getNodesByCourse(journeyId);
+            if (nodesRes.success && nodesRes.data) {
+                setJourneyNodes(nodesRes.data);
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+        }
+    };
 
     const handleLogout = () => {
         if (onLogout) onLogout();
@@ -42,12 +53,12 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
     const handleAddNewNode = () => {
         const newNode = {
             _id: `temp-${Date.now()}`, // Temporary ID
-            journeyId: journeyId,
+            courseId: journeyId,
             title: '',
             description: '',
-            order: journeyNodes.length + 1,
-            isOpen: false,
-            createdAt: new Date().toISOString()
+            questions: [],
+            /* Order sẽ do Backend tự lo liệu */
+            isOpen: false
         };
         setSelectedNode(newNode);
         setShowEditModal(true);
@@ -59,31 +70,62 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
     };
 
     // Save function (Create or Update)
-    const handleSaveNode = () => {
+    const handleSaveNode = async () => {
         if (!selectedNode.title.trim()) {
             alert("Vui lòng nhập tiêu đề!");
             return;
         }
 
-        // Check if it's a new node (by checking if ID exists in current list)
-        const existingNodeIndex = journeyNodes.findIndex(n => n._id === selectedNode._id);
-
-        let updatedNodes;
-        if (existingNodeIndex >= 0) {
-            // Update existing
-            updatedNodes = [...journeyNodes];
-            updatedNodes[existingNodeIndex] = selectedNode;
-        } else {
-            // Add new
-            updatedNodes = [...journeyNodes, selectedNode];
+        try {
+            const isNew = selectedNode._id.startsWith('temp-');
+            
+            if (isNew) {
+                const { _id, ...nodeData } = selectedNode;
+                const res = await createNode(nodeData);
+                if (res.success && res.data) {
+                    setJourneyNodes([...journeyNodes, res.data]);
+                } else {
+                    alert(res.message);
+                }
+            } else {
+                const res = await updateNode(selectedNode._id, selectedNode);
+                if (res.success && res.data) {
+                    const updatedNodes = journeyNodes.map(n => n._id === selectedNode._id ? res.data : n);
+                    setJourneyNodes(updatedNodes);
+                } else {
+                    alert(res.message);
+                }
+            }
+            closeEditModal();
+        } catch (error) {
+            console.error("Lỗi khi lưu node:", error);
+            alert(error.response?.data?.message || "Đã xảy ra lỗi khi lưu bài học!");
         }
-
-        setJourneyNodes(updatedNodes);
-        closeEditModal();
-
-        // In a real app, this would trigger an API call
     };
 
+    // Helper functions for dynamic questions
+    const handleQuestionTextChange = (index, value) => {
+        const newQuestions = [...(selectedNode.questions || [])];
+        if (typeof newQuestions[index] === 'string') {
+            newQuestions[index] = { content: value };
+        } else {
+            newQuestions[index] = { ...newQuestions[index], content: value };
+        }
+        setSelectedNode({ ...selectedNode, questions: newQuestions });
+    };
+
+    const handleAddQuestionField = () => {
+        setSelectedNode({
+            ...selectedNode,
+            questions: [...(selectedNode.questions || []), { content: "" }]
+        });
+    };
+
+    const handleRemoveQuestionField = (index) => {
+        const newQuestions = [...(selectedNode.questions || [])];
+        newQuestions.splice(index, 1);
+        setSelectedNode({ ...selectedNode, questions: newQuestions });
+    };
 
     // Drag and Drop State and Handlers
     const [draggedNode, setDraggedNode] = useState(null);
@@ -117,12 +159,11 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
         const [movedNode] = updatedNodes.splice(sourceIndex, 1);
         updatedNodes.splice(targetIndex, 0, movedNode);
 
-        // Update local state immediately for UI 
-        setJourneyNodes(updatedNodes);
-        setDraggedNode(null);
+        // Update local array with new sequential order
+        const reorderedNodes = updatedNodes.map((n, idx) => ({ ...n, order: idx + 1 }));
 
-        // In a real app, we would also update the 'order' property for each node 
-        // and send the new order to the backend here.
+        setJourneyNodes(reorderedNodes);
+        setDraggedNode(null);
     };
 
     if (!journey) {
@@ -160,6 +201,48 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
                                     className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none"
                                 />
                             </div>
+
+                            {/* Questions Management inside Modal */}
+                            <div className="border-t border-gray-100 pt-4 mt-2">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="block text-sm font-medium text-gray-700">Bộ Câu Hỏi</label>
+                                    <button
+                                        onClick={handleAddQuestionField}
+                                        className="text-xs bg-brand-primary text-white px-2 py-1 rounded hover:bg-brand-secondary transition-colors font-semibold"
+                                    >
+                                        + Thêm câu hỏi
+                                    </button>
+                                </div>
+                                <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                    {(selectedNode.questions || []).map((q, idx) => (
+                                        <div key={idx} className="flex gap-2">
+                                            <span className="bg-gray-100 text-gray-500 font-bold px-3 py-2 rounded-lg flex items-center justify-center border border-gray-200 text-sm">
+                                                {idx + 1}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                value={typeof q === 'string' ? q : (q.content || "")}
+                                                onChange={(e) => handleQuestionTextChange(idx, e.target.value)}
+                                                placeholder="Nhập nội dung câu hỏi..."
+                                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all outline-none text-sm"
+                                            />
+                                            <button
+                                                onClick={() => handleRemoveQuestionField(idx)}
+                                                className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white px-3 py-2 rounded-lg transition-colors font-bold border border-red-200 hover:border-red-500 text-sm"
+                                                title="Xóa câu hỏi này"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(!selectedNode.questions || selectedNode.questions.length === 0) && (
+                                        <p className="text-sm text-gray-400 italic text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                            Chưa có câu hỏi nào. Hãy bấm "Thêm câu hỏi" để bắt đầu.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="flex gap-3 justify-end mt-6">
                                 <button
                                     onClick={closeEditModal}
@@ -208,7 +291,21 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
 
                     {/* Edit Mode Toggle Button */}
                     <button
-                        onClick={() => setIsEditing(!isEditing)}
+                        onClick={async () => {
+                            if (isEditing) {
+                                // Tắt Edit -> Save To Server Bulk
+                                try {
+                                    const orderPayload = journeyNodes.map((n) => ({ _id: n._id, order: n.order }));
+                                    if (orderPayload.length > 0) {
+                                        await updateNodesOrder(journeyId, orderPayload);
+                                    }
+                                } catch (error) {
+                                    console.error("Save reorder failed", error);
+                                    alert("Lưu thứ tự thất bại, vui lòng tải lại trang.");
+                                }
+                            }
+                            setIsEditing(!isEditing);
+                        }}
                         className={`
                             px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2
                             ${isEditing
@@ -303,8 +400,28 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
                                     </span>
                                 </div>
                                 <p className="text-gray-600 text-sm mb-3">
-                                    {node.description}
+                                    {node.description || "Chưa có mô tả"}
                                 </p>
+
+                                {/* Readonly Questions summary list */}
+                                <div className="mt-2 mb-3 pl-3 border-l-2 border-brand-primary/20">
+                                    <p className="font-semibold text-[11px] text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                                        Bộ câu hỏi 
+                                        <span className="bg-brand-primary/10 text-brand-primary px-1.5 rounded-full">{node.questions?.length || 0}</span>
+                                    </p>
+                                    <ul className="text-sm text-gray-700 list-none space-y-1.5">
+                                        {(node.questions || []).map((q, idx) => (
+                                            <li key={idx} className="truncate flex items-start gap-2" title={typeof q === 'string' ? q : q.content}>
+                                                <span className="text-brand-primary text-[10px] mt-1">▶</span>
+                                                <span className="truncate">{typeof q === 'string' ? q : q.content}</span>
+                                            </li>
+                                        ))}
+                                        {(!node.questions || node.questions.length === 0) && (
+                                            <li className="text-gray-400 italic text-xs">Chưa cài đặt câu hỏi...</li>
+                                        )}
+                                    </ul>
+                                </div>
+
                                 <div className="flex items-center gap-2">
                                     {node.isOpen ? (
                                         <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
@@ -317,8 +434,8 @@ const JourneyDetailScreen = ({ user, onLogout }) => {
                                     )}
 
                                     {isEditing && (
-                                        <span className="text-xs italic text-orange-400 ml-auto">
-                                            (Nhấn để sửa)
+                                        <span className="text-xs italic text-orange-400 ml-auto flex items-center gap-1">
+                                            ✏️ Nhấn để sửa
                                         </span>
                                     )}
                                 </div>

@@ -37,13 +37,14 @@ const getNodeByIdLimiter = rateLimit({
 router.get("/", getNodesLimiter, authenticateToken, nodeController.getNodes);
 router.get("/:id", getNodeByIdLimiter, authenticateToken, nodeController.getNodeById);
 
-router.post("/", createNodeLimiter, authenticateToken, isAdmin, nodeController.createNode);
-router.put("/:id", updateNodeLimiter, authenticateToken, isAdmin, nodeController.updateNode);
+router.post("/reorder", updateNodeLimiter, authenticateToken, nodeController.updateNodesOrder);
+
+router.post("/", createNodeLimiter, authenticateToken, nodeController.createNode);
+router.put("/:id", updateNodeLimiter, authenticateToken, nodeController.updateNode);
 router.delete(
   "/:id",
   deleteNodeLimiter,
   authenticateToken,
-  isAdmin,
   nodeController.deleteNode
 );
 

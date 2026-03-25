@@ -1,6 +1,19 @@
 const mongoose = require("mongoose");
 const Node = require("../models/Node");
 
+// Helper function để định dạng mảng questions thành Object chuẩn (Tránh CastError db)
+const formatQuestions = (questions) => {
+  if (!Array.isArray(questions)) return [];
+  return questions.map((q) => {
+    if (typeof q === "string") return { content: q };
+    if (typeof q === "object" && q !== null) {
+      // Cho phép giữ lại id tự sinh từ UI hoặc tạo content thôi mảng Mongoose tự gán
+      return q; 
+    }
+    return { content: String(q) };
+  });
+};
+
 // Lấy danh sách node
 exports.getNodes = async (req, res) => {
   try {
@@ -71,21 +84,26 @@ exports.getNodeById = async (req, res) => {
 // Tạo node mới
 exports.createNode = async (req, res) => {
   try {
-    const {
+    let {
       courseId,
       title,
       order,
-      positionX,
-      positionY,
       description,
+      questions,
       isOpen,
     } = req.body;
 
-    if (!courseId || !title || order === undefined) {
+    if (!courseId || !title) {
       return res.status(400).json({
         success: false,
-        message: "courseId, title và order là bắt buộc",
+        message: "courseId và title là bắt buộc",
       });
+    }
+
+    // Nếu không truyền order từ Client, tự động lấy Max Order trong DB + 1
+    if (order === undefined || order === null) {
+      const lastNode = await Node.findOne({ courseId }).sort({ order: -1 });
+      order = lastNode ? lastNode.order + 1 : 1;
     }
 
     if (!mongoose.Types.ObjectId.isValid(courseId)) {
@@ -99,9 +117,8 @@ exports.createNode = async (req, res) => {
       courseId,
       title,
       order,
-      positionX,
-      positionY,
       description,
+      questions: formatQuestions(questions),
       isOpen,
     });
 
@@ -152,14 +169,17 @@ exports.updateNode = async (req, res) => {
     const allowedFields = [
       "title",
       "order",
-      "positionX",
-      "positionY",
       "description",
+      "questions",
       "isOpen",
     ];
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        node[field] = req.body[field];
+        if (field === "questions") {
+          node.questions = formatQuestions(req.body.questions);
+        } else {
+          node[field] = req.body[field];
+        }
       }
     });
 
@@ -218,6 +238,52 @@ exports.deleteNode = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi xóa node",
+      error: error.message,
+    });
+  }
+};
+
+// Cập nhật vị trí các node (Bulk Reorder)
+exports.updateNodesOrder = async (req, res) => {
+  try {
+    const { courseId, nodes } = req.body;
+    // nodes là mảng [{ _id: "...", order: 1 }, { _id: "...", order: 2 }]
+
+    if (!courseId || !nodes || !Array.isArray(nodes)) {
+      return res.status(400).json({ success: false, message: "Dữ liệu không hợp lệ" });
+    }
+
+    // Bước 1: Set order thành âm (-) trước để xóa bỏ xung đột Unique Index (Lỗi 11000)
+    const negativeUpdates = nodes.map((node, index) => ({
+      updateOne: {
+        filter: { _id: node._id, courseId },
+        update: { $set: { order: -(node.order + 1000 + index) } }
+      }
+    }));
+    if (negativeUpdates.length > 0) {
+      await Node.bulkWrite(negativeUpdates);
+    }
+
+    // Bước 2: Lật ngược lại gán order số Dương hoàn thiện
+    const positiveUpdates = nodes.map((node) => ({
+      updateOne: {
+        filter: { _id: node._id, courseId },
+        update: { $set: { order: node.order } }
+      }
+    }));
+    if (positiveUpdates.length > 0) {
+      await Node.bulkWrite(positiveUpdates);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật thứ tự hoàn tất",
+    });
+  } catch (error) {
+    console.error("Reorder nodes error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ khi đổi vị trí",
       error: error.message,
     });
   }

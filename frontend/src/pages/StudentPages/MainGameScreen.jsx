@@ -4,8 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import MapPath from '../../components/MapPath';
 import QuestionModal from '../../components/QuestionModal';
 import BackgroundDecor from '../../components/BackgroundDecor';
-import { nodes } from '../../mocks/nodes';
-import { journeys } from '../../mocks/journeys';
+import { getCourseById } from '../../services/courseService';
+import { getNodesByCourse } from '../../services/nodeService';
 
 function MainGameScreen() {
     const { journeyId } = useParams();
@@ -19,27 +19,38 @@ function MainGameScreen() {
 
     const [journeyNodes, setJourneyNodes] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [activeNode, setActiveNode] = useState(null);
 
     useEffect(() => {
-        if (journeyId) {
-            // Find journey
-            const foundJourney = journeys.find(j => j._id === journeyId);
-            setJourney(foundJourney);
+        const fetchGameData = async () => {
+            if (journeyId) {
+                try {
+                    // 1. Lấy thông tin Journey (Tên khoá học)
+                    const courseRes = await getCourseById(journeyId);
+                    if (courseRes.success && courseRes.data) {
+                        setJourney(courseRes.data);
+                    }
 
-            if (foundJourney) {
-                // Find nodes for this journey
-                const relatedNodes = nodes.filter(n => n.journeyId === foundJourney._id);
-                // Sort by order just in case
-                relatedNodes.sort((a, b) => a.order - b.order);
-
-                setJourneyNodes(relatedNodes);
-
-                setProgress({
-                    total: relatedNodes.length,
-                    current: 1
-                });
+                    // 2. Lấy thông tin các chặng (Nodes)
+                    const nodesRes = await getNodesByCourse(journeyId);
+                    if (nodesRes.success && nodesRes.data) {
+                        const relatedNodes = nodesRes.data;
+                        // Data trả về từ API đã sort sẵn theo Order, nhưng sort thêm cú nữa cho chắc
+                        relatedNodes.sort((a, b) => a.order - b.order);
+                        
+                        setJourneyNodes(relatedNodes);
+                        setProgress({
+                            total: relatedNodes.length > 0 ? relatedNodes.length : 1, // Fallback 1 node avoid zero division
+                            current: 1
+                        });
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi tải dữ liệu Game:", error);
+                }
             }
-        }
+        };
+
+        fetchGameData();
     }, [journeyId]);
 
     const handleNextLevel = () => {
@@ -56,9 +67,12 @@ function MainGameScreen() {
         }, 300); // Đợi modal đóng hẳn
     };
 
-    const handleNodeClick = (nodeId) => {
-        // Chỉ cho phép click vào node hiện tại (đang active) để làm bài
-        if (nodeId === progress.current) {
+    const handleNodeClick = (nodeOrder) => {
+        // Chỉ cho phép click vào node hiện tại theo thứ tự (đang active) để làm bài
+        // Chú ý: progress.current là số ĐẾM (bắt đầu từ 1, 2, 3...) tương thích với Order của node
+        if (nodeOrder === progress.current) {
+            const thisNode = journeyNodes.find(n => n.order === nodeOrder);
+            setActiveNode(thisNode);
             setShowModal(true);
         }
     };
@@ -71,6 +85,7 @@ function MainGameScreen() {
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
                 onComplete={handleModalComplete}
+                node={activeNode}
             />
 
             {/* Header: Title & Back Button */}

@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-const EMOTION_VALUES = ["happy", "sad", "neutral", "confused", "angry"];
-
 const reflectionSchema = new mongoose.Schema(
   {
     studentId: {
@@ -23,30 +21,19 @@ const reflectionSchema = new mongoose.Schema(
       minlength: 10,
       maxlength: 500,
     },
-    emotion: {
+    questionId: {
       type: String,
-      enum: EMOTION_VALUES,
-      default: null,
-    },
-    character: {
-      type: String,
-      trim: true,
-      default: null,
+      required: true,
     },
     isPrivate: {
       type: Boolean,
       default: false,
-    },
-    version: {
-      type: Number,
-      default: 0,
     },
   },
   {
     timestamps: true,
   },
 );
-
-reflectionSchema.index({ studentId: 1, nodeId: 1 }, { unique: true });
+reflectionSchema.index({ studentId: 1, questionId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Reflection", reflectionSchema);

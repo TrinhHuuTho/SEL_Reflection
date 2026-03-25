@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 const nodeSchema = new mongoose.Schema(
   {
@@ -16,24 +17,25 @@ const nodeSchema = new mongoose.Schema(
     order: {
       type: Number,
       required: true,
-      min: 1,
-    },
-    positionX: {
-      type: Number,
-      default: 0,
-    },
-    positionY: {
-      type: Number,
-      default: 0,
     },
     description: {
       type: String,
       trim: true,
       default: "",
     },
+    questions: [
+      {
+        id: { 
+          type: String, 
+          required: true,
+          default: () => crypto.randomUUID()
+        },
+        content: { type: String, required: true }
+      }
+    ],
     isOpen: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {
