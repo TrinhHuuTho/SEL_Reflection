@@ -1,6 +1,19 @@
 const mongoose = require("mongoose");
 const Node = require("../models/Node");
 
+// Helper function để định dạng mảng questions thành Object chuẩn (Tránh CastError db)
+const formatQuestions = (questions) => {
+  if (!Array.isArray(questions)) return [];
+  return questions.map((q) => {
+    if (typeof q === "string") return { content: q };
+    if (typeof q === "object" && q !== null) {
+      // Cho phép giữ lại id tự sinh từ UI hoặc tạo content thôi mảng Mongoose tự gán
+      return q; 
+    }
+    return { content: String(q) };
+  });
+};
+
 // Lấy danh sách node
 exports.getNodes = async (req, res) => {
   try {
@@ -76,6 +89,7 @@ exports.createNode = async (req, res) => {
       title,
       order,
       description,
+      questions,
       isOpen,
     } = req.body;
 
@@ -104,6 +118,7 @@ exports.createNode = async (req, res) => {
       title,
       order,
       description,
+      questions: formatQuestions(questions),
       isOpen,
     });
 
@@ -155,11 +170,16 @@ exports.updateNode = async (req, res) => {
       "title",
       "order",
       "description",
+      "questions",
       "isOpen",
     ];
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        node[field] = req.body[field];
+        if (field === "questions") {
+          node.questions = formatQuestions(req.body.questions);
+        } else {
+          node[field] = req.body[field];
+        }
       }
     });
 

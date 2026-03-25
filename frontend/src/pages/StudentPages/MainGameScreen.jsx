@@ -19,6 +19,7 @@ function MainGameScreen() {
 
     const [journeyNodes, setJourneyNodes] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [activeNode, setActiveNode] = useState(null);
 
     useEffect(() => {
         const fetchGameData = async () => {
@@ -66,9 +67,12 @@ function MainGameScreen() {
         }, 300); // Đợi modal đóng hẳn
     };
 
-    const handleNodeClick = (nodeId) => {
-        // Chỉ cho phép click vào node hiện tại (đang active) để làm bài
-        if (nodeId === progress.current) {
+    const handleNodeClick = (nodeOrder) => {
+        // Chỉ cho phép click vào node hiện tại theo thứ tự (đang active) để làm bài
+        // Chú ý: progress.current là số ĐẾM (bắt đầu từ 1, 2, 3...) tương thích với Order của node
+        if (nodeOrder === progress.current) {
+            const thisNode = journeyNodes.find(n => n.order === nodeOrder);
+            setActiveNode(thisNode);
             setShowModal(true);
         }
     };
@@ -81,6 +85,7 @@ function MainGameScreen() {
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
                 onComplete={handleModalComplete}
+                node={activeNode}
             />
 
             {/* Header: Title & Back Button */}

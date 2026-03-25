@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-const EMOTION_VALUES = ["happy", "sad", "neutral", "confused", "angry"];
-
 const reflectionSchema = new mongoose.Schema(
   {
     studentId: {
@@ -23,30 +21,33 @@ const reflectionSchema = new mongoose.Schema(
       minlength: 10,
       maxlength: 500,
     },
-    emotion: {
+    questionId: {
       type: String,
-      enum: EMOTION_VALUES,
-      default: null,
-    },
-    character: {
-      type: String,
-      trim: true,
-      default: null,
+      required: true,
     },
     isPrivate: {
       type: Boolean,
       default: false,
-    },
-    version: {
-      type: Number,
-      default: 0,
     },
   },
   {
     timestamps: true,
   },
 );
+reflectionSchema.index({ studentId: 1, questionId: 1 }, { unique: true });
 
-reflectionSchema.index({ studentId: 1, nodeId: 1 }, { unique: true });
+// Sự kiện drop index cũ tránh lỗi 11000
+mongoose.connection.on('connected', async () => {
+  try {
+    const db = mongoose.connection.db;
+    if (db) {
+      await mongoose.model('Reflection').collection.dropIndex('studentId_1_nodeId_1').catch(() => {});
+      await mongoose.model('Reflection').collection.dropIndex('studentId_1_nodeId_1_question_1').catch(() => {});
+      console.log('Đã dọn dẹp Unique Index cũ của bảng Reflection!');
+    }
+  } catch (error) {
+    // Bỏ qua nếu collection chưa tồn tại hoặc index không có
+  }
+});
 
 module.exports = mongoose.model("Reflection", reflectionSchema);
