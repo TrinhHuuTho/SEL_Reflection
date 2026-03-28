@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { user_center } from '../../mocks/user_center';
-import { classes } from '../../mocks/classes';
-import { journeys } from '../../mocks/journeys';
-import { nodes } from '../../mocks/nodes';
-import { class_members } from '../../mocks/class_members';
-import { users } from '../../mocks/users';
-import { student_progress } from '../../mocks/student_progress';
+import { getMyCenter } from '../../services/centerService';
+import { getClasses } from '../../services/classService';
+import { getCourses } from '../../services/courseService';
+import { getNodesByCourse } from '../../services/nodeService';
+import { getMembersByClass } from '../../services/classMemberService';
+import { getClassProgress } from '../../services/progressService';
+import { getStudentReflectionsForCourse } from '../../services/reflectionService';
 
 const StatisticsScreen = ({ user, onLogout }) => {
     const navigate = useNavigate();
@@ -23,70 +23,101 @@ const StatisticsScreen = ({ user, onLogout }) => {
     const [journeyNodes, setJourneyNodes] = useState([]);
     const [studentsData, setStudentsData] = useState([]);
 
-    // Modal State for Student Answers
+    // Modal Detail States
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [studentReflections, setStudentReflections] = useState([]);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-    // Initial Data Loading
+    // Initial Data Loading (Classes & Journeys for Sidebar tree)
     useEffect(() => {
-        if (user) {
-            // Find teacher's center
-            const link = user_center.find(uc => uc.userId === user._id);
-            if (link) {
-                // Get classes for this center
-                const myClasses = classes.filter(c => c.centerId === link.centerId);
+        const loadInitialData = async () => {
+            if (user) {
+                try {
+                    // Start by checking center
+                    const centerRes = await getMyCenter();
 
-                // Attach journeys to each class for the tree view
-                const classesWithJourneys = myClasses.map(cls => {
-                    const classJourneys = journeys.filter(j => j.classId === cls._id);
-                    return { ...cls, journeys: classJourneys };
-                });
+                    if (centerRes && centerRes.success && centerRes.data) {
+                        // Teacher has center -> Fetch classes
+                        const classRes = await getClasses();
+                        const myClasses = classRes.data || [];
 
-                setCenterClasses(classesWithJourneys);
-                // Expand all classes by default for better visibility
-                const initialExpanded = classesWithJourneys.reduce((acc, cls) => ({ ...acc, [cls._id]: true }), {});
-                setExpandedClasses(initialExpanded);
+                        // Fetch journeys for each class
+                        const classesWithJourneys = await Promise.all(
+                            myClasses.map(async (cls) => {
+                                try {
+                                    const jrnyRes = await getCourses(cls._id);
+                                    return { ...cls, journeys: jrnyRes.data || [] };
+                                } catch (e) {
+                                    return { ...cls, journeys: [] };
+                                }
+                            })
+                        );
+
+                        setCenterClasses(classesWithJourneys);
+                        const initialExpanded = classesWithJourneys.reduce((acc, cls) => ({ ...acc, [cls._id]: true }), {});
+                        setExpandedClasses(initialExpanded);
+                    }
+                } catch (error) {
+                    console.error("Lỗi tải Sidebar Data", error);
+                }
             }
-        }
+        };
+
+        loadInitialData();
     }, [user]);
 
-    // When Journey Selection Changes (triggered by clicking tree item)
+    // When Journey Selection Changes -> Fetch Progress and Students
     useEffect(() => {
-        if (selectedJourneyId && selectedClassId) {
-            // 1. Get Nodes for this Journey
-            const relevantNodes = nodes
-                .filter(n => n.journeyId === selectedJourneyId)
-                .sort((a, b) => a.order - b.order);
-            setJourneyNodes(relevantNodes);
+        const loadProgressData = async () => {
+            if (selectedJourneyId && selectedClassId) {
+                try {
+                    // 1. Get Nodes order
+                    const nodesRes = await getNodesByCourse(selectedJourneyId);
+                    const relevantNodes = (nodesRes.data || []).sort((a, b) => a.order - b.order);
+                    setJourneyNodes(relevantNodes);
 
-            // 2. Get Students in this Class
-            const memberships = class_members.filter(cm => cm.classId === selectedClassId);
-            const studentIds = memberships.map(m => m.studentId);
-            const studentsInClass = users.filter(u => studentIds.includes(u._id));
+                    // 2. Get Students in the Class
+                    const memRes = await getMembersByClass(selectedClassId);
+                    const memberships = memRes.data || [];
+                    const studentsInClass = memberships.map(m => m.studentId).filter(s => s != null);
 
-            // 3. Build Progress Data for each Student
-            const data = studentsInClass.map(student => {
-                // Find progress record for this student & journey
-                const progress = student_progress.find(sp => sp.studentId === student._id && sp.journeyId === selectedJourneyId);
+                    // 3. Get Real Class Progress Table
+                    const progRes = await getClassProgress(selectedJourneyId);
+                    const classProgressList = progRes.data || [];
 
-                const completedCount = progress ? progress.completedNodes.length : 0;
-                const totalNodes = relevantNodes.length;
-                const percent = totalNodes > 0 ? Math.round((completedCount / totalNodes) * 100) : 0;
+                    // 4. Transform data for UI
+                    const mappedData = studentsInClass.map(student => {
+                        const progress = classProgressList.find(sp => sp.studentId?._id === student._id);
+                        const completedNodes = progress?.completedNodes || [];
+                        const completedCount = completedNodes.length;
+                        const totalNodes = relevantNodes.length;
+                        const percent = totalNodes > 0 ? Math.round((completedCount / totalNodes) * 100) : 0;
 
-                return {
-                    student,
-                    progress, // Raw progress object (contains answers)
-                    completedCount,
-                    totalNodes,
-                    percent
-                };
-            });
+                        return {
+                            student,
+                            progress: {
+                                completedNodes,
+                                totalQuestionsAnswered: progress?.totalQuestionsAnswered || 0,
+                                lastActiveAt: progress?.lastActiveAt || null
+                            },
+                            completedCount,
+                            totalNodes,
+                            percent
+                        };
+                    });
 
-            setStudentsData(data);
-        } else {
-            setJourneyNodes([]);
-            setStudentsData([]);
-        }
+                    setStudentsData(mappedData);
+                } catch (error) {
+                    console.error("Lỗi khi tải báo cáo học tập:", error);
+                }
+            } else {
+                setJourneyNodes([]);
+                setStudentsData([]);
+            }
+        };
+
+        loadProgressData();
     }, [selectedJourneyId, selectedClassId]);
 
     const toggleClass = (classId) => {
@@ -101,9 +132,22 @@ const StatisticsScreen = ({ user, onLogout }) => {
         setSelectedJourneyId(jrnId);
     };
 
-    const handleViewDetail = (studentDat) => {
+    const handleViewDetail = async (studentDat) => {
         setSelectedStudent(studentDat);
         setShowDetailModal(true);
+        setIsLoadingDetails(true);
+        try {
+            // Vác ID đi móc sạch bài giải của Sinh viên trong Hành trình đó
+            const ansRes = await getStudentReflectionsForCourse(studentDat.student._id, selectedJourneyId);
+            if (ansRes.success) {
+                setStudentReflections(ansRes.data || []);
+            }
+        } catch (e) {
+            console.error("Lỗi lấy bài chấm:", e);
+            setStudentReflections([]);
+        } finally {
+            setIsLoadingDetails(false);
+        }
     };
 
     const closeModal = () => {
@@ -333,13 +377,18 @@ const StatisticsScreen = ({ user, onLogout }) => {
 
                         {/* Modal Body */}
                         <div className="p-6 overflow-y-auto grow bg-gray-50 custom-scrollbar">
-                            {journeyNodes.length === 0 ? (
+                            {isLoadingDetails ? (
+                                <div className="text-center p-12 text-gray-500 flex flex-col items-center">
+                                    <div className="w-10 h-10 mb-4 border-4 border-gray-200 border-t-brand-primary rounded-full animate-spin"></div>
+                                    <p>Đang tải bài nộp của học sinh...</p>
+                                </div>
+                            ) : journeyNodes.length === 0 ? (
                                 <p className="text-center text-gray-500">Hành trình này chưa có bài học nào.</p>
                             ) : (
                                 <div className="space-y-6">
                                     {journeyNodes.map((node, index) => {
-                                        // Find answer for this node
-                                        const answerRecord = selectedStudent.progress?.answers?.find(a => a.nodeId === node._id);
+                                        // Look for reflection(s) of this exact node
+                                        const nodeReflections = studentReflections.filter(a => a.nodeId === node._id);
                                         const isCompleted = selectedStudent.progress?.completedNodes?.includes(node._id);
 
                                         return (
@@ -372,12 +421,25 @@ const StatisticsScreen = ({ user, onLogout }) => {
                                                         <h5 className="text-xs font-bold text-brand-primary uppercase mb-2 flex items-center gap-1">
                                                             🗣️ Câu trả lời của học sinh
                                                         </h5>
-                                                        {answerRecord ? (
-                                                            <div className="bg-white p-4 rounded-lg border-l-4 border-brand-secondary shadow-sm bg-gradient-to-r from-gray-50 to-white">
-                                                                <p className="text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">{answerRecord.answer}</p>
-                                                                <p className="text-xs text-gray-400 mt-2 text-right italic border-t border-gray-100 pt-2">
-                                                                    Đã nộp: {new Date(answerRecord.submittedAt).toLocaleString('vi-VN')}
-                                                                </p>
+                                                        {nodeReflections.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {nodeReflections.map((ref, idx) => {
+                                                                    const questionText = node.questions?.find(q => q._id === ref.questionId || q.id === ref.questionId)?.content || 'Câu hỏi không xác định';
+                                                                    return (
+                                                                        <div key={ref.id} className="bg-white p-4 rounded-lg border-l-4 border-brand-secondary shadow-sm bg-gradient-to-r from-gray-50 to-white">
+                                                                            <p className="text-xs text-brand-primary font-bold mb-1">
+                                                                                <span className="opacity-70">Hỏi:</span> {questionText}
+                                                                            </p>
+                                                                            <p className="text-gray-800 font-medium whitespace-pre-wrap leading-relaxed">
+                                                                                <span className="opacity-50 text-xs font-bold mr-1">Đáp:</span> 
+                                                                                {ref.content}
+                                                                            </p>
+                                                                            <p className="text-xs text-gray-400 mt-2 text-right italic border-t border-gray-100 pt-2">
+                                                                                Đã nộp: {new Date(ref.createdAt).toLocaleString('vi-VN')}
+                                                                            </p>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         ) : (
                                                             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">

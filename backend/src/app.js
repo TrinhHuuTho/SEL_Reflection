@@ -16,6 +16,7 @@ const userCenterRoutes = require('../routes/userCenter');
 const classMemberRoutes = require('../routes/classMember');
 const nodeRoutes = require('../routes/node');
 const reflectionRoutes = require('../routes/reflection');
+const progressRoutes = require('../routes/progress');
 
 // Worker
 const { startEmailWorker } = require('./emailWorker');
@@ -66,6 +67,7 @@ const PORT = process.env.PORT || 3000;
     app.use('/class-member', classMemberRoutes);
     app.use('/nodes', nodeRoutes);
     app.use('/reflections', reflectionRoutes);
+    app.use('/progress', progressRoutes);
 
     // Start server
     app.listen(PORT, () => {
