@@ -11,13 +11,13 @@ const ClassManagementScreen = ({ user, onLogout }) => {
     const [centerName, setCenterName] = useState('Đang tải...');
     const [currentCenterId, setCurrentCenterId] = useState(null);
     const [expandedClasses, setExpandedClasses] = useState({});
-    
+
     // Tab State: Lưu tab hiện tại đang chọn của mỗi lớp (default là 'journeys')
     const [activeTabs, setActiveTabs] = useState({});
-    
+
     // Member State
     const [classMembers, setClassMembers] = useState({}); // { classId: [member1, member2] }
-    
+
     const [showStudentModal, setShowStudentModal] = useState(false);
     const [selectedTargetClassId, setSelectedTargetClassId] = useState(null);
     const [availableStudents, setAvailableStudents] = useState([]);
@@ -59,7 +59,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
             // 2. Lấy dữ liệu Class đổ từ Database xuống
             const teacherId = user._id || user.id;
             const classRes = await getClasses({ centerId: cId, teacher_id: teacherId });
-            
+
             if (classRes.success) {
                 const fetchedClasses = classRes.data;
 
@@ -73,19 +73,19 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                     const classJourneys = (res && res.success && res.data) ? res.data : [];
                     return { ...cls, journeys: classJourneys };
                 });
-                
+
                 setCenterClasses(classesWithJourneys);
 
                 const initialExpanded = classesWithJourneys.reduce((acc, cls) => ({ ...acc, [cls._id]: true }), {});
                 setExpandedClasses(initialExpanded);
-                
+
                 const defaultTabs = classesWithJourneys.reduce((acc, cls) => ({ ...acc, [cls._id]: 'journeys' }), {});
                 setActiveTabs(defaultTabs);
 
                 // Fetch song song danh sách sinh viên của TẤT CẢ các lớp
                 const memberPromises = classesWithJourneys.map(cls => getMembersByClass(cls._id));
                 const memberResults = await Promise.all(memberPromises);
-                
+
                 const newClassMembers = {};
                 classesWithJourneys.forEach((cls, idx) => {
                     const res = memberResults[idx];
@@ -138,7 +138,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                 setExpandedClasses(prev => ({ ...prev, [newClass._id]: true }));
                 setActiveTabs(prev => ({ ...prev, [newClass._id]: 'journeys' }));
                 setClassMembers(prev => ({ ...prev, [newClass._id]: [] }));
-                 
+
                 setShowAddClassModal(false);
                 setNewClassData({ class_name: '', description: '' });
             } else {
@@ -199,7 +199,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
         setShowStudentModal(true);
         setIsLoadingAvailable(true);
         setSelectedStudentId('');
-        
+
         try {
             const res = await getAvailableStudents(currentCenterId, classId);
             if (res.success) {
@@ -245,7 +245,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
 
     const handleRemoveStudent = async (classId, studentId) => {
         if (!window.confirm("Bạn có chắc chắn muốn bỏ học sinh này khỏi lớp?")) return;
-        
+
         try {
             const res = await removeStudentFromClass(classId, studentId);
             if (res.success) {
@@ -405,7 +405,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                             </option>
                                         ))}
                                     </select>
-                                    
+
                                     <div className="flex gap-3 justify-end mt-4">
                                         <button disabled={isAddingStudent} onClick={() => setShowStudentModal(false)} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">Hủy</button>
                                         <button disabled={isAddingStudent} onClick={handleAddStudentSubmit} className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700">Gán vào</button>
@@ -446,11 +446,25 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                     <span className="text-sm font-semibold text-gray-600 hidden md:block">
                         {user?.full_name}
                     </span>
-                    <img
-                        src={user?.avatar || "https://i.pravatar.cc/150"}
-                        alt="Avatar"
-                        className="w-10 h-10 rounded-full border border-gray-200"
-                    />
+                    <div className="w-16 h-16 rounded-full border-2 border-brand-primary overflow-hidden flex-shrink-0">
+                        {typeof user?.avatar === 'object' && user?.avatar?.image ? (
+                            <img
+                                src={user.avatar.image}
+                                alt={user.avatar.name}
+                                className="w-full h-full object-contain"
+                            />
+                        ) : typeof user?.avatar === 'object' && user?.avatar?.emoji ? (
+                            <div className={`w-full h-full flex items-center justify-center text-3xl font-bold ${user.avatar.color}`}>
+                                {user.avatar.emoji}
+                            </div>
+                        ) : (
+                            <img
+                                src={user?.avatar || "https://i.pravatar.cc/150"}
+                                alt="Avatar"
+                                className="w-full h-full object-cover"
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -489,7 +503,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                                                        {cls.class_name} 
+                                                        {cls.class_name}
                                                         <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full whitespace-nowrap hidden md:inline-block">
                                                             {classMembers[cls._id]?.length || 0} học sinh
                                                         </span>
@@ -510,13 +524,13 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                             {/* Tab Navigation */}
                                             <div className="flex border-b border-gray-100 px-4 pt-2">
                                                 <button
-                                                    onClick={() => setActiveTabs(p => ({...p, [cls._id]: 'journeys'}))}
+                                                    onClick={() => setActiveTabs(p => ({ ...p, [cls._id]: 'journeys' }))}
                                                     className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTabs[cls._id] === 'journeys' ? 'border-brand-primary text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                                                 >
                                                     Hành trình
                                                 </button>
                                                 <button
-                                                    onClick={() => setActiveTabs(p => ({...p, [cls._id]: 'students'}))}
+                                                    onClick={() => setActiveTabs(p => ({ ...p, [cls._id]: 'students' }))}
                                                     className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTabs[cls._id] === 'students' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                                                 >
                                                     Học sinh ({classMembers[cls._id]?.length || 0})
@@ -525,12 +539,12 @@ const ClassManagementScreen = ({ user, onLogout }) => {
 
                                             {/* Target Tab Contents */}
                                             <div className="p-2 bg-white">
-                                                
+
                                                 {/* Tab HÀNH TRÌNH */}
                                                 {activeTabs[cls._id] === 'journeys' && (
                                                     <div className="p-2">
                                                         <div className="flex justify-end mb-3">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => {
                                                                     setSelectedTargetClassIdForJourney(cls._id);
                                                                     setShowAddJourneyModal(true);
@@ -541,34 +555,34 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                             </button>
                                                         </div>
                                                         <div className="space-y-1">
-                                                        {cls.journeys.length === 0 ? (
-                                                            <div className="p-4 text-center text-sm text-gray-400 italic bg-gray-50/50 rounded-lg m-2 border border-dashed border-gray-200">
-                                                                Chưa có bài học / hành trình nào.
-                                                            </div>
-                                                        ) : (
-                                                            cls.journeys.map(journey => (
-                                                                <div
-                                                                    key={journey._id}
-                                                                    onClick={() => navigate(`/teacher/journey/${journey._id}`)}
-                                                                    className="flex items-center p-3 ml-2 mr-2 rounded-lg hover:bg-blue-50 cursor-pointer border-l-4 border-transparent hover:border-brand-primary transition-all group"
-                                                                >
-                                                                    <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-brand-primary mr-4 transition-colors"></div>
-                                                                    <div className="flex-1">
-                                                                        <h4 className="font-bold text-gray-700 group-hover:text-brand-primary transition-colors">
-                                                                            {journey.title}
-                                                                        </h4>
-                                                                        <p className="text-xs text-gray-500 line-clamp-1">
-                                                                            {journey.description}
-                                                                        </p>
-                                                                    </div>
-                                                                    <button
-                                                                        className="opacity-0 group-hover:opacity-100 px-3 py-1 text-xs font-bold text-brand-primary bg-blue-100 rounded-md transition-opacity"
-                                                                    >
-                                                                        Chi tiết
-                                                                    </button>
+                                                            {cls.journeys.length === 0 ? (
+                                                                <div className="p-4 text-center text-sm text-gray-400 italic bg-gray-50/50 rounded-lg m-2 border border-dashed border-gray-200">
+                                                                    Chưa có bài học / hành trình nào.
                                                                 </div>
-                                                            ))
-                                                        )}
+                                                            ) : (
+                                                                cls.journeys.map(journey => (
+                                                                    <div
+                                                                        key={journey._id}
+                                                                        onClick={() => navigate(`/teacher/journey/${journey._id}`)}
+                                                                        className="flex items-center p-3 ml-2 mr-2 rounded-lg hover:bg-blue-50 cursor-pointer border-l-4 border-transparent hover:border-brand-primary transition-all group"
+                                                                    >
+                                                                        <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-brand-primary mr-4 transition-colors"></div>
+                                                                        <div className="flex-1">
+                                                                            <h4 className="font-bold text-gray-700 group-hover:text-brand-primary transition-colors">
+                                                                                {journey.title}
+                                                                            </h4>
+                                                                            <p className="text-xs text-gray-500 line-clamp-1">
+                                                                                {journey.description}
+                                                                            </p>
+                                                                        </div>
+                                                                        <button
+                                                                            className="opacity-0 group-hover:opacity-100 px-3 py-1 text-xs font-bold text-brand-primary bg-blue-100 rounded-md transition-opacity"
+                                                                        >
+                                                                            Chi tiết
+                                                                        </button>
+                                                                    </div>
+                                                                ))
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -577,7 +591,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                 {activeTabs[cls._id] === 'students' && (
                                                     <div className="p-2">
                                                         <div className="flex justify-end mb-3">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleOpenStudentModal(cls._id)}
                                                                 className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded text-sm font-bold border border-green-200 hover:border-transparent transition-colors flex items-center gap-1"
                                                             >
@@ -600,7 +614,7 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                                                 <p className="text-xs text-gray-500 truncate">{member.studentId?.email}</p>
                                                                             </div>
                                                                         </div>
-                                                                        <button 
+                                                                        <button
                                                                             onClick={() => handleRemoveStudent(cls._id, member.studentId?._id)}
                                                                             className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded"
                                                                             title="Xóa khỏi lớp"

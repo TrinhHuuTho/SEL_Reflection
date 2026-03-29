@@ -3,25 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { getAllCenters, getMyCenter, joinCenter } from '../../services/centerService';
 
 const normalizeAvatar = (avatar) => {
-  if (!avatar) return null;
+    if (!avatar) return null;
 
-  if (typeof avatar === 'string') {
-    try {
-      const parsed = JSON.parse(avatar);
-      if (parsed && typeof parsed === 'object' && parsed.image) {
-        return parsed.image;
-      }
-      return avatar;
-    } catch (e) {
-      return avatar;
+    if (typeof avatar === 'string') {
+        try {
+            const parsed = JSON.parse(avatar);
+            if (parsed && typeof parsed === 'object' && parsed.image) {
+                return parsed.image;
+            }
+            return avatar;
+        } catch (e) {
+            return avatar;
+        }
     }
-  }
 
-  if (typeof avatar === 'object' && avatar.image) {
-    return avatar.image;
-  }
+    if (typeof avatar === 'object' && avatar.image) {
+        return avatar.image;
+    }
 
-  return null;
+    return null;
 };
 
 const TeacherDashboard = ({ user, onLogout }) => {
@@ -204,11 +204,39 @@ const TeacherDashboard = ({ user, onLogout }) => {
 
                 <div className="p-8">
                     <div className="flex items-center gap-4 mb-8">
-                        <img
-                            src={user?.avatar || "https://i.pravatar.cc/150"}
-                            alt="Avatar"
-                            className="w-16 h-16 rounded-full border-2 border-brand-primary"
-                        />
+                        <div className="w-16 h-16 rounded-full border-2 border-brand-primary overflow-hidden flex-shrink-0">
+                            {typeof user?.avatar === 'object' && user?.avatar?.image ? (
+                                <img
+                                    src={user.avatar.image}
+                                    alt={user.avatar.name}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : typeof user?.avatar === 'object' && user?.avatar?.emoji ? (
+                                <div className={`w-full h-full flex items-center justify-center text-3xl font-bold ${user.avatar.color}`}>
+                                    {user.avatar.emoji}
+                                </div>
+                            ) : (
+                                <div className="w-16 h-16 rounded-full border-2 border-brand-primary overflow-hidden flex-shrink-0">
+                                    {typeof user?.avatar === 'object' && user?.avatar?.image ? (
+                                        <img
+                                            src={user.avatar.image}
+                                            alt={user.avatar.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    ) : typeof user?.avatar === 'object' && user?.avatar?.emoji ? (
+                                        <div className={`w-full h-full flex items-center justify-center text-3xl font-bold ${user.avatar.color}`}>
+                                            {user.avatar.emoji}
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={user?.avatar || "https://i.pravatar.cc/150"}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <div>
                             <h2 className="text-2xl font-bold text-gray-800">Xin chào, {user?.full_name}!</h2>
                             <p className="text-gray-500">{user?.email}</p>
