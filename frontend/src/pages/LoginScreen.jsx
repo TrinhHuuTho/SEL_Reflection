@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logIn, forgotPassword } from '../services/authService';
 import BackgroundDecor from '../components/BackgroundDecor';
 
 const LoginScreen = ({ onLogin }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -15,6 +16,25 @@ const LoginScreen = ({ onLogin }) => {
     const [forgotEmail, setForgotEmail] = useState('');
     const [forgotIsLoading, setForgotIsLoading] = useState(false);
     const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            switch (errorParam) {
+                case 'auth_failed':
+                    setError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+                    break;
+                case 'missing_tokens':
+                    setError('Thiếu thông tin xác thực. Vui lòng thử lại.');
+                    break;
+                case 'callback_error':
+                    setError('Lỗi xử lý đăng nhập. Vui lòng thử lại.');
+                    break;
+                default:
+                    setError('Đã xảy ra lỗi không xác định.');
+            }
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -168,9 +188,8 @@ const LoginScreen = ({ onLogin }) => {
                         {/* Google Login Button */}
                         <button
                             type="button"
-                            onClick={handleSubmit} // Reusing logic as requested
-                            disabled={isLoading}
-                            className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 text-sm font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            onClick={() => window.location.href = 'http://localhost:3000/auth/google'}
+                            className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 text-sm font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
                         >
                             {/* Google Icon SVG */}
                             <svg className="w-5 h-5" viewBox="0 0 24 24">

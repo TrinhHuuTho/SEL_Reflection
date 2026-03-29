@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllCenters, getMyCenter, joinCenter } from '../../services/centerService';
 
+const normalizeAvatar = (avatar) => {
+  if (!avatar) return null;
+
+  if (typeof avatar === 'string') {
+    try {
+      const parsed = JSON.parse(avatar);
+      if (parsed && typeof parsed === 'object' && parsed.image) {
+        return parsed.image;
+      }
+      return avatar;
+    } catch (e) {
+      return avatar;
+    }
+  }
+
+  if (typeof avatar === 'object' && avatar.image) {
+    return avatar.image;
+  }
+
+  return null;
+};
+
 const TeacherDashboard = ({ user, onLogout }) => {
     const navigate = useNavigate();
     const [selectedCenter, setSelectedCenter] = useState(null);

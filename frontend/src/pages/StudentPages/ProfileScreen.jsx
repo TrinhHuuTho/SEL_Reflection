@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import BackgroundDecor from '../../components/BackgroundDecor';
-import { clearAuthData } from '../../services/localStorageService';
+import AvatarSelector from '../../components/AvatarSelector';
+import { clearAuthData, setUser as saveUserToStorage } from '../../services/localStorageService';
 import { changePassword } from '../../services/authService';
+import { updateUserAvatar } from '../../services/userService';
 
-const ProfileScreen = ({ user, onLogout }) => {
+const ProfileScreen = ({ user, setUser, onLogout }) => {
     const navigate = useNavigate();
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+    const [currentAvatar, setCurrentAvatar] = useState(user?.avatar);
+    const [avatarMessage, setAvatarMessage] = useState({ text: '', type: '' });
+    const [avatarLoading, setAvatarLoading] = useState(false);
+    
+    // Sync currentAvatar whenever user changes (e.g., after avatar update)
+    useEffect(() => {
+        if (user?.avatar !== currentAvatar) {
+            setCurrentAvatar(user?.avatar);
+        }
+    }, [user?.avatar, currentAvatar]);
     
     // Các state quản lý đổi mật khẩu
     const [oldPassword, setOldPassword] = useState('');
@@ -73,6 +86,51 @@ const ProfileScreen = ({ user, onLogout }) => {
         setMessage({ text: '', type: '' });
     };
 
+    const handleAvatarSelect = async (selectedAvatar) => {
+        try {
+            setAvatarLoading(true);
+            setAvatarMessage({ text: '', type: '' });
+            
+            // Call API to save avatar to backend
+            const response = await updateUserAvatar(selectedAvatar);
+            
+            if (response.success) {
+                // Update both local state and parent state
+                setCurrentAvatar(selectedAvatar);
+                
+                // Create updated user object
+                const updatedUser = {
+                    ...user,
+                    avatar: selectedAvatar
+                };
+                
+                // Update localStorage
+                saveUserToStorage(updatedUser);
+                
+                // Update parent component state (App.jsx) so all routes see the change
+                if (setUser) {
+                    setUser(updatedUser);
+                }
+                
+                setAvatarMessage({ text: 'Avatar đã được cập nhật thành công!', type: 'success' });
+                
+                // Close modal after 1 second
+                setTimeout(() => {
+                    setShowAvatarSelector(false);
+                    setAvatarMessage({ text: '', type: '' });
+                }, 1000);
+            } else {
+                setAvatarMessage({ text: response.message || 'Lỗi khi cập nhật avatar.', type: 'error' });
+            }
+        } catch (error) {
+            console.error('Error updating avatar:', error);
+            const errMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật avatar.';
+            setAvatarMessage({ text: errMessage, type: 'error' });
+        } finally {
+            setAvatarLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-brand-bg flex flex-col relative overflow-hidden">
             <BackgroundDecor />
@@ -83,15 +141,33 @@ const ProfileScreen = ({ user, onLogout }) => {
             <div className="flex-1 flex items-center justify-center p-4 z-10">
                 <div className="bg-white/80 backdrop-blur-md w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-4 border-white">
                     <div className="bg-brand-primary h-32 relative">
-                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2">
-                            <div className="w-32 h-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden">
-                                <img
-                                    src={user.avatar || "https://i.pravatar.cc/150"}
-                                    alt="Avatar"
-                                    className="w-full h-full object-cover"
-                                />
+                        <button
+                            onClick={() => setShowAvatarSelector(true)}
+                            className="absolute -bottom-16 left-1/2 -translate-x-1/2 group"
+                        >
+                            <div className="w-32 h-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden group-hover:shadow-lg group-hover:border-brand-secondary transition-all">
+                                {typeof currentAvatar === 'object' && currentAvatar?.image ? (
+                                    <img
+                                        src={currentAvatar.image}
+                                        alt={currentAvatar.name}
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : typeof currentAvatar === 'object' && currentAvatar?.emoji ? (
+                                    <div className={`w-full h-full flex items-center justify-center text-6xl font-bold ${currentAvatar?.color}`}>
+                                        {currentAvatar?.emoji}
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={currentAvatar || "https://i.pravatar.cc/150"}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
                             </div>
-                        </div>
+                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="text-white text-2xl">✏️</span>
+                            </div>
+                        </button>
                     </div>
 
                     <div className="pt-20 pb-8 px-8 text-center">
@@ -123,6 +199,13 @@ const ProfileScreen = ({ user, onLogout }) => {
                         </div>
 
                         <div className="mt-8 space-y-3">
+                            <button
+                                onClick={() => setShowAvatarSelector(true)}
+                                className="w-full bg-brand-accent text-brand-text font-bold py-3 rounded-xl shadow-lg shadow-brand-accent/30 hover:bg-yellow-300 transition-all"
+                            >
+                                🎨 Thay đổi Avatar
+                            </button>
+
                             <button
                                 onClick={() => setShowPasswordModal(true)}
                                 className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-primary/30 hover:bg-brand-primary/90 transition-all"
@@ -219,6 +302,17 @@ const ProfileScreen = ({ user, onLogout }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Avatar Selector Modal */}
+            {showAvatarSelector && (
+                <AvatarSelector
+                    currentAvatar={currentAvatar}
+                    onSelectAvatar={handleAvatarSelect}
+                    onClose={() => setShowAvatarSelector(false)}
+                    isLoading={avatarLoading}
+                    message={avatarMessage}
+                />
             )}
         </div>
     );
