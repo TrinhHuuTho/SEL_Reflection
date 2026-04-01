@@ -8,7 +8,6 @@ import {
 } from '../services/localStorageService';
 
 const axiosClient = axios.create({
-  // URL của backend server, đổi thành biến môi trường khi deploy production
   baseURL: 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
@@ -16,11 +15,9 @@ const axiosClient = axios.create({
   timeout: 10000, 
 });
 
-// Biến trạng thái quản lý quá trình xử lý làm mới token (ánh xạ Request Queue)
 let isRefreshing = false;
 let failedQueue = [];
 
-// Hàm kích hoạt các request bị treo khi token đã được làm mới thành công (hoặc thất bại)
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -33,7 +30,6 @@ const processQueue = (error, token = null) => {
   failedQueue = []; // Reset queue
 };
 
-// 1. Interceptor Request: Gắn Access Token vào Header trước khi gửi API
 axiosClient.interceptors.request.use(
   (config) => {
     const token = getToken(); // lấy token an toàn qua service
@@ -62,11 +58,8 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu mã lỗi trả về là 401 Unauthorized và chưa từng _retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       
-      // Kịch bản 1: Nếu một request khác đang tiến hành làm mới token, 
-      // nhét request này vào hàng đợi (Queue) chờ token mới (để tránh 5 api cùng spam gọi refresh-token).
       if (isRefreshing) {
         return new Promise(function(resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -87,7 +80,8 @@ axiosClient.interceptors.response.use(
       // Kịch bản 2: User không còn cả refresh_token (đã logout, rác browser,..) thì kick thẳng ra ngoài auth/login
       if (!refreshToken) {
          clearAuthData();
-         // window.location.href = '/login'; // Chuyển hướng hoặc xử lý bằng react-router sau
+         // Dispatch event để App component biết user đã logout
+         window.dispatchEvent(new Event('auth-logout'));
          return Promise.reject(error);
       }
 
@@ -122,7 +116,8 @@ axiosClient.interceptors.response.use(
         
         // Ngắt phiên làm việc -> Văng về Login
         clearAuthData();
-        // window.location.href = '/login'; 
+        // Dispatch event để App component biết user đã logout
+        window.dispatchEvent(new Event('auth-logout'));
         
         return Promise.reject(refreshError);
       } finally {

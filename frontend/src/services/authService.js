@@ -1,6 +1,7 @@
 import axios from 'axios';
 import axiosClient from '../configurations/axiosClient';
 import { setToken, setRefreshToken, setUser } from './localStorageService';
+import { getUserInfo } from './userService';
 
 // Định nghĩa các endpoint (đường dẫn API) để dễ quản lý và dễ đọc hơn
 const API = {
@@ -49,6 +50,17 @@ export const logIn = async (email, password) => {
     setToken(response.accessToken);
     setRefreshToken(response.refreshToken);
     setUser(response.user);
+    
+    // Fetch full user info từ server (bao gồm avatar) và save lại
+    try {
+      const userInfo = await getUserInfo();
+      if (userInfo.success && userInfo.data) {
+        setUser(userInfo.data);
+      }
+    } catch (error) {
+      console.error('Error fetching full user info:', error);
+      // Continue anyway, use basic user data from login response
+    }
   }
 
   return response;

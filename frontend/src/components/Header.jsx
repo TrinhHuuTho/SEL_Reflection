@@ -25,11 +25,23 @@ const Header = ({ centerName, user }) => {
                     </p>
                 </div>
                 <div className="w-10 h-10 rounded-full border-2 border-brand-accent p-0.5 bg-white shadow-sm overflow-hidden">
-                    <img
-                        src={user?.avatar || "https://i.pravatar.cc/150"}
-                        alt="Avatar"
-                        className="w-full h-full object-cover rounded-full"
-                    />
+                    {typeof user?.avatar === 'object' && user?.avatar?.image ? (
+                        <img
+                            src={user.avatar.image}
+                            alt={user.avatar.name}
+                            className="w-full h-full object-contain"
+                        />
+                    ) : typeof user?.avatar === 'object' && user?.avatar?.emoji ? (
+                        <div className={`w-full h-full flex items-center justify-center ${user?.avatar?.color}`}>
+                            {user?.avatar?.emoji}
+                        </div>
+                    ) : (
+                        <img
+                            src={user?.avatar || "https://i.pravatar.cc/150"}
+                            alt="Avatar"
+                            className="w-full h-full object-cover rounded-full"
+                        />
+                    )}
                 </div>
             </Link>
         </header>

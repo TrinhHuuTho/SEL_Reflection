@@ -23,7 +23,7 @@ router.get('/google/callback',
           role: req.user.role
         },
         process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '15m' }
+        { expiresIn: '1m' }
       );
 
       const refreshToken = jwt.sign(

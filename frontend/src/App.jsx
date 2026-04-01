@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import MainGameScreen from "./pages/StudentPages/MainGameScreen"
 import LoginScreen from "./pages/LoginScreen"
@@ -13,19 +13,54 @@ import AdminLayout from "./pages/AdminPages/AdminLayout"
 import AdminOverview from "./pages/AdminPages/AdminOverview"
 import AdminUsersScreen from "./pages/AdminPages/AdminUsersScreen"
 import AdminCentersScreen from "./pages/AdminPages/AdminCentersScreen"
-import { getUser } from "./services/localStorageService"
+import { getUser, setUser as saveUserToStorage } from "./services/localStorageService"
+import { getUserInfo } from "./services/userService"
+import GoogleCallback from "./pages/GoogleCallback"
 
 function App() {
     // Tự động khôi phục user list từ LocalStorage khi khởi tạo app (F5 lại trang)
     const [user, setUser] = useState(() => getUser());
 
-    const handleLogin = (userData) => {
+    const handleLogin = useCallback((userData) => {
         setUser(userData);
-    };
+    }, []);
 
-    const handleLogout = () => {
+    const handleLogout = useCallback(() => {
         setUser(null);
-    };
+    }, []);
+
+    // Fetch full user info from server when user exists (e.g., after page reload or refresh token)
+    useEffect(() => {
+        if (user && user.id) {
+            const fetchUserData = async () => {
+                try {
+                    const response = await getUserInfo();
+                    if (response.success && response.data) {
+                        // Update both state and localStorage with full user info (including avatar)
+                        setUser(response.data);
+                        saveUserToStorage(response.data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user info:', error);
+                    // Continue with existing user data if fetch fails
+                }
+            };
+            fetchUserData();
+        }
+    }, []); // Run only once on mount
+
+    useEffect(() => {
+        const handleAuthLogout = () => {
+            console.log('Auth token invalid, logging out...');
+            handleLogout();
+        };
+
+        window.addEventListener('auth-logout', handleAuthLogout);
+
+        return () => {
+            window.removeEventListener('auth-logout', handleAuthLogout);
+        };
+    }, [handleLogout]);
 
     // Protected Route Wrapper
     // Updated to accept allowed roles
@@ -54,6 +89,12 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Google OAuth Callback */}
+                <Route
+                    path="/auth/callback"
+                    element={<GoogleCallback onLogin={handleLogin} />}
+                />
+
                 {/* Nếu đã có user thì LoginScreen văng về trang chủ tuỳ theo role */}
                 <Route 
                     path="/login" 
@@ -80,7 +121,7 @@ function App() {
                     path="/profile"
                     element={
                         <ProtectedRoute>
-                            <ProfileScreen user={user} onLogout={handleLogout} />
+                            <ProfileScreen user={user} setUser={setUser} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />
@@ -126,7 +167,7 @@ function App() {
                     path="/teacher/profile"
                     element={
                         <ProtectedRoute allowedRoles={['teacher', 'Giáo viên']}>
-                            <TeacherProfileScreen user={user} onLogout={handleLogout} />
+                            <TeacherProfileScreen user={user} setUser={setUser} onLogout={handleLogout} />
                         </ProtectedRoute>
                     }
                 />
