@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createReflection } from '../services/reflectionService';
+import { createReflection, getReflectionsByNode } from '../services/reflectionService';
 
 const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
     const [step, setStep] = useState(0); // 0: Hidden, 1: Opening, 2: Open-Ended Question, 3: Success
@@ -8,26 +8,38 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
     const [answers, setAnswers] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Mock recent answers from other users
-    const recentAnswers = [
-        { id: 1, name: "Minh Anh", avatar: "https://i.pravatar.cc/150?u=1", text: "Mình thích nhất là phần thí nghiệm, nó rất thú vị! 🌋" },
-        { id: 2, name: "Tuấn Kiệt", avatar: "https://i.pravatar.cc/150?u=2", text: "Video về khủng long làm mình thấy tò mò muốn tìm hiểu thêm. 🦖" },
-        { id: 3, name: "Lan Chi", avatar: "https://i.pravatar.cc/150?u=3", text: "Làm việc nhóm rất vui, mọi người đều đóng góp ý kiến. 🤝" },
-    ];
+    // States for Peer Answers (Right Side)
+    const [peerAnswers, setPeerAnswers] = useState([]);
+    const [isLoadingPeers, setIsLoadingPeers] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setStep(1);
             setAnswers(questionsList.map(() => ""));
             setCurrentQIdx(0);
+            
+            // Fetch Peer Reflections right away
+            if (node?._id) {
+                setIsLoadingPeers(true);
+                getReflectionsByNode(node._id)
+                    .then(res => {
+                        if (res.success && res.data?.peerReflections) {
+                            setPeerAnswers(res.data.peerReflections);
+                        }
+                    })
+                    .catch(err => console.error("Lỗi lấy bài bạn bè:", err))
+                    .finally(() => setIsLoadingPeers(false));
+            }
+
             // Simulate opening animation
             setTimeout(() => setStep(2), 100);
         } else {
             setStep(0);
             setAnswers([]);
             setCurrentQIdx(0);
+            setPeerAnswers([]);
         }
-    }, [isOpen]);
+    }, [isOpen, node?._id]);
 
     const handleSubmit = async () => {
             if (questionsList.length === 0) {
@@ -224,23 +236,51 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {recentAnswers.map((item) => (
-                            <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <img
-                                        src={item.avatar}
-                                        alt={item.name}
-                                        className="w-8 h-8 rounded-full border border-gray-200"
-                                    />
-                                    <span className="font-bold text-gray-700 text-sm">{item.name}</span>
-                                </div>
-                                <p className="text-gray-600 text-sm italic">"{item.text}"</p>
+                        {isLoadingPeers ? (
+                            <div className="flex flex-col items-center justify-center h-full text-blue-500 opacity-60">
+                                <div className="w-8 h-8 rounded-full border-4 border-blue-200 border-t-brand-primary animate-spin mb-3"></div>
+                                <p className="text-xs font-bold uppercase tracking-widest">Đang tải...</p>
                             </div>
-                        ))}
+                        ) : (() => {
+                            const currentQuestionId = questionsList[currentQIdx]?._id;
+                            const visibleAnswers = peerAnswers.filter(ans => ans.questionId === currentQuestionId && !ans.isPrivate);
+                            
+                            if (visibleAnswers.length === 0) {
+                                return (
+                                    <div className="h-full flex flex-col justify-center items-center text-center p-4">
+                                        <div className="text-4xl opacity-50 mb-3">🤫</div>
+                                        <p className="text-sm font-bold text-gray-400">Chưa có ai trả lời câu hỏi này cả.</p>
+                                        <p className="text-xs text-brand-primary mt-1">Hãy là người bình luận đầu tiên!</p>
+                                    </div>
+                                );
+                            }
 
-                        <div className="bg-blue-100/30 p-4 rounded-xl text-center border-2 border-dashed border-blue-200">
-                            <p className="text-brand-secondary font-bold text-sm">Và còn nhiều bạn khác...</p>
-                        </div>
+                            return (
+                                <>
+                                    {visibleAnswers.map((item) => (
+                                        <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <img
+                                                    src={item.author?.avatar || "https://i.pravatar.cc/150"}
+                                                    alt={item.author?.full_name}
+                                                    className="w-8 h-8 rounded-full border border-gray-200 object-cover"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="font-bold text-gray-700 text-sm block truncate group-hover:text-brand-primary transition-colors">
+                                                        {item.author?.full_name || "Học sinh Ẩn danh"}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400">{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-gray-600 text-sm italic whitespace-pre-wrap">"{item.content}"</p>
+                                        </div>
+                                    ))}
+                                    <div className="bg-blue-100/30 p-4 rounded-xl text-center border-2 border-dashed border-blue-200">
+                                        <p className="text-brand-secondary font-bold text-sm">Và nhiều chia sẻ khác...</p>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 

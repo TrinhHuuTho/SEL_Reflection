@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Reflection = require("../models/Reflection");
+const Node = require("../models/Node");
+const StudentProgress = require("../models/StudentProgress");
 
 const normalizeString = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -90,6 +92,50 @@ exports.createReflection = async (req, res) => {
 
     await reflection.save();
 
+    // --- BẮT ĐẦU: LOGIC AUTO-UPDATE TIẾN ĐỘ HỌC TẬP TỰ ĐỘNG ---
+    try {
+      const node = await Node.findById(nodeId);
+      if (node && node.courseId) {
+        // Tìm hoặc đẻ mới Thẻ Progress cho Sinh viên này
+        let progress = await StudentProgress.findOne({
+          studentId: req.user.id,
+          courseId: node.courseId,
+        });
+
+        if (!progress) {
+          progress = new StudentProgress({
+            studentId: req.user.id,
+            courseId: node.courseId,
+          });
+        }
+
+        // Tăng đếm tổng số câu trả lời trong Hành trình
+        progress.totalQuestionsAnswered += 1;
+        progress.lastActiveAt = Date.now();
+
+        // Check xem Học sinh đã trả lời ĐỦ 100% số câu hỏi trong Node hiện tại chưa
+        const answeredCount = await Reflection.countDocuments({
+          studentId: req.user.id,
+          nodeId: nodeId,
+        });
+
+        const totalRequired = node.questions?.length || 0;
+
+        // Nếu ĐỦ -> Update cờ Đã Hoàn Thành (Mở khóa map mới)
+        if (answeredCount >= totalRequired && totalRequired > 0) {
+          if (!progress.completedNodes.includes(nodeId)) {
+            progress.completedNodes.push(nodeId);
+          }
+        }
+
+        await progress.save();
+      }
+    } catch (progressError) {
+      console.error("Lỗi chạy ngầm khi cập nhật Student Progress:", progressError);
+      // Nuốt lỗi để không làm gián đoạn luồng Nộp bài chính
+    }
+    // --- KẾT THÚC: AUTO-UPDATE ---
+
     return res.status(201).json({
       success: true,
       message: "Tao reflection thanh cong",
@@ -109,6 +155,33 @@ exports.createReflection = async (req, res) => {
       message: "Loi khi tao reflection",
       error: error.message,
     });
+  }
+};
+
+exports.getStudentReflectionsForCourse = async (req, res) => {
+  try {
+    const { studentId, courseId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(studentId) || !mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ success: false, message: "ID khong hop le" });
+    }
+
+    // Lấy toàn bộ mốc bài học (Nodes) của khoá Hành trình này
+    const nodes = await Node.find({ courseId }).select("_id");
+    const nodeIds = nodes.map((n) => n._id);
+
+    // Truy xuất toàn bộ bản Reflection mà học sinh đã nộp ở bất kì Node nào trong mảng trên
+    const reflections = await Reflection.find({
+      studentId,
+      nodeId: { $in: nodeIds },
+    }).sort({ createdAt: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: reflections.map(serializeReflection),
+    });
+  } catch (error) {
+    console.error("Get student reflections error:", error);
+    return res.status(500).json({ success: false, message: "Loi Server" });
   }
 };
 
