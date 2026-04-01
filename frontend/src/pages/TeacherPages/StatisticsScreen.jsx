@@ -385,11 +385,38 @@ const StatisticsScreen = ({ user, onLogout }) => {
                         {/* Modal Header */}
                         <div className="bg-brand-primary p-5 flex justify-between items-center text-white shrink-0 rounded-t-2xl">
                             <div className="flex items-center gap-3">
-                                <img
-                                    src={selectedStudent.student.avatar}
-                                    alt=""
-                                    className="w-12 h-12 rounded-full border-2 border-white/50 bg-white"
-                                />
+                                {/* Avatar rendering - parse JSON if needed */}
+                                {(() => {
+                                    // Parse avatar if it's a JSON string
+                                    let parsedAvatar = selectedStudent.student.avatar;
+                                    if (typeof parsedAvatar === 'string') {
+                                        try {
+                                            parsedAvatar = JSON.parse(parsedAvatar);
+                                        } catch (e) {
+                                            // Not JSON, keep as string (URL)
+                                        }
+                                    }
+                                    
+                                    return (
+                                        <div className="w-12 h-12 rounded-full border-2 border-white/50 overflow-hidden bg-white flex items-center justify-center">
+                                            {typeof parsedAvatar === 'object' && parsedAvatar?.image ? (
+                                                <img
+                                                    src={parsedAvatar.image}
+                                                    alt={parsedAvatar.name}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            ) : typeof parsedAvatar === 'object' && parsedAvatar?.emoji ? (
+                                                <div className={`w-full h-full flex items-center justify-center text-lg font-bold ${parsedAvatar?.color}`}>
+                                                    {parsedAvatar?.emoji}
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-purple-100 text-lg">
+                                                    👤
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                                 <div>
                                     <h3 className="text-lg font-bold">{selectedStudent.student.full_name}</h3>
                                     <p className="text-xs text-blue-100 flex items-center gap-1">
