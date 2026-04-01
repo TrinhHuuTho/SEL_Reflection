@@ -49,6 +49,14 @@ export const logIn = async (email, password) => {
   if (response.success) {
     setToken(response.accessToken);
     setRefreshToken(response.refreshToken);
+    // Ensure avatar is parsed if backend returned it as a JSON string
+    if (response.user && typeof response.user.avatar === 'string') {
+      try {
+        response.user.avatar = JSON.parse(response.user.avatar);
+      } catch (e) {
+        // leave as string if it's not JSON
+      }
+    }
     setUser(response.user);
     
     // Fetch full user info từ server (bao gồm avatar) và save lại

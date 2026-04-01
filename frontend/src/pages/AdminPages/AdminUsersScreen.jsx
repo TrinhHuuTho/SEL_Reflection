@@ -160,12 +160,38 @@ const AdminUsersScreen = () => {
                                 </td>
                             </tr>
                         ) : (
-                            filteredUsers.map((user, idx) => (
+                            filteredUsers.map((user, idx) => {
+                                // Parse avatar if it's a JSON string
+                                let parsedAvatar = user.avatar;
+                                if (typeof parsedAvatar === 'string') {
+                                    try {
+                                        parsedAvatar = JSON.parse(parsedAvatar);
+                                    } catch (e) {
+                                        // Not JSON, keep as string (URL)
+                                    }
+                                }
+                                
+                                return (
                                 <tr key={idx} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-brand-accent/20 rounded-full flex items-center justify-center font-bold text-brand-primary">
-                                                {user.full_name?.charAt(0) || 'U'}
+                                            {/* Avatar rendering - same logic as Header.jsx */}
+                                            <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                                                {typeof parsedAvatar === 'object' && parsedAvatar?.image ? (
+                                                    <img
+                                                        src={parsedAvatar.image}
+                                                        alt={parsedAvatar.name}
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                ) : typeof parsedAvatar === 'object' && parsedAvatar?.emoji ? (
+                                                    <div className={`w-full h-full flex items-center justify-center ${parsedAvatar?.color}`}>
+                                                        {parsedAvatar?.emoji}
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full h-full bg-brand-accent/20 flex items-center justify-center font-bold text-brand-primary">
+                                                        {user.full_name?.charAt(0) || 'U'}
+                                                    </div>
+                                                )}
                                             </div>
                                             <p className="font-bold text-gray-800">{user.full_name}</p>
                                         </div>
@@ -193,7 +219,8 @@ const AdminUsersScreen = () => {
                                         </span>
                                     </td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

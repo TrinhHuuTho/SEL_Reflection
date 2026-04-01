@@ -605,10 +605,38 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                             </div>
                                                         ) : (
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-2">
-                                                                {classMembers[cls._id].map(member => (
+                                                                {classMembers[cls._id].map(member => {
+                                                                    // Parse avatar if it's a JSON string
+                                                                    let parsedAvatar = member.studentId?.avatar;
+                                                                    if (typeof parsedAvatar === 'string') {
+                                                                        try {
+                                                                            parsedAvatar = JSON.parse(parsedAvatar);
+                                                                        } catch (e) {
+                                                                            // Not JSON, keep as string (URL)
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    return (
                                                                     <div key={member._id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg shadow-sm bg-gray-50/50 hover:bg-gray-50">
                                                                         <div className="flex items-center gap-3">
-                                                                            <img src={member.studentId?.avatar || "https://i.pravatar.cc/100"} alt="avt" className="w-10 h-10 rounded-full border border-gray-200" />
+                                                                            {/* Avatar rendering - same logic as Header.jsx */}
+                                                                            <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                                                                                {typeof parsedAvatar === 'object' && parsedAvatar?.image ? (
+                                                                                    <img
+                                                                                        src={parsedAvatar.image}
+                                                                                        alt={parsedAvatar.name}
+                                                                                        className="w-full h-full object-contain"
+                                                                                    />
+                                                                                ) : typeof parsedAvatar === 'object' && parsedAvatar?.emoji ? (
+                                                                                    <div className={`w-full h-full flex items-center justify-center text-lg ${parsedAvatar?.color}`}>
+                                                                                        {parsedAvatar?.emoji}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center bg-purple-100 text-sm">
+                                                                                        👤
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                             <div className="overflow-hidden">
                                                                                 <p className="text-sm font-bold text-gray-800 truncate">{member.studentId?.full_name || 'Vô danh'}</p>
                                                                                 <p className="text-xs text-gray-500 truncate">{member.studentId?.email}</p>
@@ -624,7 +652,8 @@ const ClassManagementScreen = ({ user, onLogout }) => {
                                                                             </svg>
                                                                         </button>
                                                                     </div>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                             </div>
                                                         )}
                                                     </div>
