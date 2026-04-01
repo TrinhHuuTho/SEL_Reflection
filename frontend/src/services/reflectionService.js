@@ -19,3 +19,7 @@ export const updateReflectionById = async (id, data) => {
 export const deleteReflectionById = async (id) => {
     return await axiosClient.delete(`${API.REFLECTIONS}/${id}`);
 };
+
+export const getStudentReflectionsForCourse = async (studentId, courseId) => {
+    return await axiosClient.get(`${API.REFLECTIONS}/student/${studentId}/course/${courseId}`);
+};

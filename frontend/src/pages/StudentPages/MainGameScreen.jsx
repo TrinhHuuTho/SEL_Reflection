@@ -6,6 +6,7 @@ import QuestionModal from '../../components/QuestionModal';
 import BackgroundDecor from '../../components/BackgroundDecor';
 import { getCourseById } from '../../services/courseService';
 import { getNodesByCourse } from '../../services/nodeService';
+import { getMyProgress } from '../../services/progressService';
 
 function MainGameScreen() {
     const { journeyId } = useParams();
@@ -35,13 +36,38 @@ function MainGameScreen() {
                     const nodesRes = await getNodesByCourse(journeyId);
                     if (nodesRes.success && nodesRes.data) {
                         const relatedNodes = nodesRes.data;
-                        // Data trả về từ API đã sort sẵn theo Order, nhưng sort thêm cú nữa cho chắc
                         relatedNodes.sort((a, b) => a.order - b.order);
                         
                         setJourneyNodes(relatedNodes);
+
+                        // 3. Lấy Data Progress của bộ não Backend
+                        let completedList = [];
+                        try {
+                            const progRes = await getMyProgress(journeyId);
+                            if (progRes.success && progRes.data) {
+                                completedList = progRes.data.completedNodes || [];
+                            }
+                        } catch (e) {
+                            console.error("Lỗi tải progress:", e);
+                        }
+
+                        // 4. Thuật toán quy đổi Node thành Session
+                        // Tìm Node đầu tiên CòN TRỐNG (chưa có ID trong list đã hoàn thành)
+                        let currentIndex = 1; 
+                        for (let i = 0; i < relatedNodes.length; i++) {
+                            if (!completedList.includes(relatedNodes[i]._id)) {
+                                currentIndex = i + 1; // Chặng hiện tại
+                                break;
+                            }
+                            // Nếu đã hoàn thành full 100% -> Nhảy lên quá total để Full xanh tất cả Map
+                            if (i === relatedNodes.length - 1) {
+                                currentIndex = relatedNodes.length + 1;
+                            }
+                        }
+
                         setProgress({
-                            total: relatedNodes.length > 0 ? relatedNodes.length : 1, // Fallback 1 node avoid zero division
-                            current: 1
+                            total: relatedNodes.length > 0 ? relatedNodes.length : 1,
+                            current: currentIndex
                         });
                     }
                 } catch (error) {
@@ -67,13 +93,17 @@ function MainGameScreen() {
         }, 300); // Đợi modal đóng hẳn
     };
 
-    const handleNodeClick = (nodeOrder) => {
-        // Chỉ cho phép click vào node hiện tại theo thứ tự (đang active) để làm bài
-        // Chú ý: progress.current là số ĐẾM (bắt đầu từ 1, 2, 3...) tương thích với Order của node
-        if (nodeOrder === progress.current) {
-            const thisNode = journeyNodes.find(n => n.order === nodeOrder);
+    const handleNodeClick = (clickedSessionId) => {
+        // clickedSessionId tương thích với số 1, 2, 3.. (Array Index) của MapPath svg chứ không phải Order nữa
+        if (clickedSessionId === progress.current) {
+            // Mở khoá làm bài
+            const thisNode = journeyNodes[clickedSessionId - 1];
             setActiveNode(thisNode);
             setShowModal(true);
+        } else if (clickedSessionId < progress.current) {
+            alert("✅ Chặng này bạn đã hoàn thành xuất sắc rồi! Hãy đi tiếp nhé.");
+        } else {
+            alert("🔒 Bạn phải hoàn thành chặng trước đó mới có thể mở khóa chặng này!");
         }
     };
 
@@ -105,8 +135,8 @@ function MainGameScreen() {
                 <div className="w-24"></div>
             </div>
 
-            <p className="text-gray-600 font-medium z-50 bg-white/80 px-4 py-1 rounded-full backdrop-blur-sm">
-                Đã hoàn thành: {progress.current - 1}/{progress.total} chặng
+            <p className="text-gray-600 font-medium z-50 bg-white/80 px-4 py-1 rounded-full backdrop-blur-sm shadow mb-4">
+                Đã hoàn thành: <span className="font-bold text-brand-primary">{Math.min(progress.current - 1, progress.total)}/{progress.total}</span> chặng Hành Trình
             </p>
 
             {/* Map Container */}

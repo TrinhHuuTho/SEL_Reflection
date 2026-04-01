@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const reflectionController = require("../controllers/reflectionController");
-const { authenticateToken } = require("../middlewares/auth");
+const { authenticateToken, isAdmin } = require("../middlewares/auth");
 const rateLimit = require("express-rate-limit");
 
 const reflectionLimiter = rateLimit({
@@ -19,10 +19,17 @@ router.post(
 );
 router.get(
   "/node/:nodeId",
-  reflectionLimiter,
   authenticateToken,
   reflectionController.getReflectionsByNode,
 );
+
+router.get(
+  "/student/:studentId/course/:courseId",
+  authenticateToken,
+  isAdmin,
+  reflectionController.getStudentReflectionsForCourse
+);
+
 router.patch(
   "/:id",
   reflectionLimiter,
