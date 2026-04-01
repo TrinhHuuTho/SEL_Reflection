@@ -34,8 +34,8 @@ const seedUsers = [
     email: 'student_lxo_6@gmail.com',
     password: 'password123',
     full_name: 'Hoc Sinh La Xuan Oai 6',
-    role: 'user',
-    avatar: 'https://i.pravatar.cc/150?u=student_lxo_6',
+    role: 'student',
+    avatar: '{"emoji":"👦","name":"Student1","color":"bg-yellow-100"}',
     isActive: true
   },
   {
@@ -43,8 +43,8 @@ const seedUsers = [
     email: 'student_lxo_7@gmail.com',
     password: 'password123',
     full_name: 'Hoc Sinh La Xuan Oai 7',
-    role: 'user',
-    avatar: 'https://i.pravatar.cc/150?u=student_lxo_7',
+    role: 'student',
+    avatar: '{"emoji":"👧","name":"Student2","color":"bg-pink-100"}',
     isActive: true
   },
   {
@@ -52,8 +52,8 @@ const seedUsers = [
     email: 'student_cd_6@gmail.com',
     password: 'password123',
     full_name: 'Hoc Sinh Chuong Duong 6',
-    role: 'user',
-    avatar: 'https://i.pravatar.cc/150?u=student_cd_6',
+    role: 'student',
+    avatar: '{"emoji":"👦","name":"Student3","color":"bg-green-100"}',
     isActive: true
   }
 ];
@@ -141,13 +141,15 @@ const run = async () => {
     userStats[status] += 1;
   }
 
-  for (const seedReflection of seedReflections) {
-    const status = await upsertReflection(seedReflection);
-    reflectionStats[status] += 1;
-  }
+  // Reflection seed dùng field sai (userId thay vì studentId, etc)
+  // Skip cho tới khi có node/question data chính xác
+  // for (const seedReflection of seedReflections) {
+  //   const status = await upsertReflection(seedReflection);
+  //   reflectionStats[status] += 1;
+  // }
 
   console.log('Seed users:', userStats);
-  console.log('Seed reflections:', reflectionStats);
+  // console.log('Seed reflections:', reflectionStats);
   await mongoose.disconnect();
 };
 

@@ -49,11 +49,26 @@ const AdminLayout = ({ user, onLogout }) => {
 
                 <div className="p-4 border-t border-gray-100">
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-4">
-                        <img
-                            src={user?.avatar || "https://i.pravatar.cc/150?u=admin"}
-                            alt="Admin Avatar"
-                            className="w-10 h-10 rounded-full border-2 border-brand-primary"
-                        />
+                        {/* Avatar rendering - same logic as Header.jsx */}
+                        <div className="w-10 h-10 rounded-full border-2 border-brand-primary overflow-hidden flex-shrink-0">
+                            {typeof user?.avatar === 'object' && user?.avatar?.image ? (
+                                <img
+                                    src={user.avatar.image}
+                                    alt={user.avatar.name}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : typeof user?.avatar === 'object' && user?.avatar?.emoji ? (
+                                <div className={`w-full h-full flex items-center justify-center ${user?.avatar?.color}`}>
+                                    {user?.avatar?.emoji}
+                                </div>
+                            ) : (
+                                <img
+                                    src={user?.avatar || "https://i.pravatar.cc/150?u=admin"}
+                                    alt="Admin Avatar"
+                                    className="w-full h-full object-contain"
+                                />
+                            )}
+                        </div>
                         <div className="overflow-hidden">
                             <p className="text-sm font-bold text-gray-800 truncate">{user?.full_name || 'Admin'}</p>
                             <p className="text-xs text-gray-400 capitalize truncate">{user?.role || 'admin'}</p>

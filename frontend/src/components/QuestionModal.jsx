@@ -257,14 +257,38 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
 
                             return (
                                 <>
-                                    {visibleAnswers.map((item) => (
+                                    {visibleAnswers.map((item) => {
+                                        // Parse avatar if it's a JSON string
+                                        let parsedAvatar = item.author?.avatar;
+                                        if (typeof parsedAvatar === 'string') {
+                                            try {
+                                                parsedAvatar = JSON.parse(parsedAvatar);
+                                            } catch (e) {
+                                                // Not JSON, keep as string (URL)
+                                            }
+                                        }
+                                        
+                                        return (
                                         <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-shadow">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <img
-                                                    src={item.author?.avatar || "https://i.pravatar.cc/150"}
-                                                    alt={item.author?.full_name}
-                                                    className="w-8 h-8 rounded-full border border-gray-200 object-cover"
-                                                />
+                                                {/* Avatar rendering - same logic as Header.jsx */}
+                                                <div className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                                                    {typeof parsedAvatar === 'object' && parsedAvatar?.image ? (
+                                                        <img
+                                                            src={parsedAvatar.image}
+                                                            alt={parsedAvatar.name}
+                                                            className="w-full h-full object-contain"
+                                                        />
+                                                    ) : typeof parsedAvatar === 'object' && parsedAvatar?.emoji ? (
+                                                        <div className={`w-full h-full flex items-center justify-center ${parsedAvatar?.color}`}>
+                                                            {parsedAvatar?.emoji}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-purple-100 text-lg">
+                                                            👤
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="font-bold text-gray-700 text-sm block truncate group-hover:text-brand-primary transition-colors">
                                                         {item.author?.full_name || "Học sinh Ẩn danh"}
@@ -274,7 +298,8 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
                                             </div>
                                             <p className="text-gray-600 text-sm italic whitespace-pre-wrap">"{item.content}"</p>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <div className="bg-blue-100/30 p-4 rounded-xl text-center border-2 border-dashed border-blue-200">
                                         <p className="text-brand-secondary font-bold text-sm">Và nhiều chia sẻ khác...</p>
                                     </div>

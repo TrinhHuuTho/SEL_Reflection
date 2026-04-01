@@ -288,16 +288,40 @@ const StatisticsScreen = ({ user, onLogout }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {studentsData.map((item) => (
+                                            {studentsData.map((item) => {
+                                                // Parse avatar if it's a JSON string
+                                                let parsedAvatar = item.student.avatar;
+                                                if (typeof parsedAvatar === 'string') {
+                                                    try {
+                                                        parsedAvatar = JSON.parse(parsedAvatar);
+                                                    } catch (e) {
+                                                        // Not JSON, keep as string (URL)
+                                                    }
+                                                }
+                                                
+                                                return (
                                                 <tr key={item.student._id} className="hover:bg-blue-50/30 transition-colors group">
                                                     <td className="p-5">
                                                         <div className="flex items-center gap-4">
                                                             <div className="relative">
-                                                                <img
-                                                                    src={item.student.avatar || "https://i.pravatar.cc/150"}
-                                                                    alt=""
-                                                                    className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover"
-                                                                />
+                                                                {/* Avatar rendering - same logic as Header.jsx */}
+                                                                <div className="w-12 h-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gray-200 flex items-center justify-center">
+                                                                    {typeof parsedAvatar === 'object' && parsedAvatar?.image ? (
+                                                                        <img
+                                                                            src={parsedAvatar.image}
+                                                                            alt={parsedAvatar.name}
+                                                                            className="w-full h-full object-contain"
+                                                                        />
+                                                                    ) : typeof parsedAvatar === 'object' && parsedAvatar?.emoji ? (
+                                                                        <div className={`w-full h-full flex items-center justify-center text-xl font-bold ${parsedAvatar?.color}`}>
+                                                                            {parsedAvatar?.emoji}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center bg-purple-100 text-lg">
+                                                                            👤
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${item.percent === 100 ? 'bg-green-500' : 'bg-blue-500'}`}></div>
                                                             </div>
                                                             <div>
@@ -337,7 +361,8 @@ const StatisticsScreen = ({ user, onLogout }) => {
                                                         </button>
                                                     </td>
                                                 </tr>
-                                            ))}
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
