@@ -523,4 +523,3 @@ const StatisticsScreen = ({ user, onLogout }) => {
     );
 };
 
-export default StatisticsScreen;
