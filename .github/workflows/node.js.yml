@@ -45,7 +45,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     environment:
-      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name || '.env') }}
 
     strategy:
       fail-fast: false
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
-      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name) }}
+      name: ${{ vars.CI_ENVIRONMENT || (github.event_name == 'pull_request' && github.base_ref || github.ref_name || '.env') }}
 
     services:
       mongodb:
