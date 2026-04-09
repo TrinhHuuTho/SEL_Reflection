@@ -1,5 +1,7 @@
 const reflectionController = require("../controllers/reflectionController");
 const Reflection = require("../models/Reflection");
+const Node = require("../models/Node");
+const StudentProgress = require("../models/StudentProgress");
 
 jest.mock("../models/Reflection", () => {
   const ReflectionModel = jest.fn();
@@ -8,8 +10,19 @@ jest.mock("../models/Reflection", () => {
   return ReflectionModel;
 });
 
+jest.mock("../models/Node", () => ({
+  findById: jest.fn(),
+}));
+
+jest.mock("../models/StudentProgress", () => {
+  const StudentProgressModel = jest.fn();
+  StudentProgressModel.findOne = jest.fn();
+  return StudentProgressModel;
+});
+
 const VALID_REFLECTION_ID = "507f1f77bcf86cd799439011";
 const VALID_NODE_ID = "507f1f77bcf86cd799439015";
+const VALID_QUESTION_ID = "507f1f77bcf86cd799439016";
 const OWNER_ID = "507f1f77bcf86cd799439012";
 const OTHER_USER_ID = "507f1f77bcf86cd799439013";
 
@@ -23,6 +36,8 @@ const createResponse = () => {
 describe("Reflection Controller", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Node.findById.mockResolvedValue(null);
+    StudentProgress.findOne.mockResolvedValue(null);
   });
 
   test("createReflection should return 201 for valid payload", async () => {
@@ -40,6 +55,7 @@ describe("Reflection Controller", () => {
       user: { id: OWNER_ID },
       body: {
         nodeId: VALID_NODE_ID,
+        questionId: VALID_QUESTION_ID,
         content: "Noi dung reflection hop le lon hon 10 ky tu",
         emotion: "happy",
         character: "cat",
@@ -91,6 +107,7 @@ describe("Reflection Controller", () => {
       user: { id: OWNER_ID },
       body: {
         nodeId: VALID_NODE_ID,
+        questionId: VALID_QUESTION_ID,
         content: "Noi dung trung lap cua student va node",
       },
     };
@@ -218,7 +235,7 @@ describe("Reflection Controller", () => {
       params: { id: VALID_REFLECTION_ID },
       body: {
         content: "Noi dung da duoc cap nhat va van hop le",
-        emotion: "sad",
+        isPrivate: true,
       },
     };
     const res = createResponse();
@@ -229,8 +246,7 @@ describe("Reflection Controller", () => {
     expect(reflectionDoc.content).toBe(
       "Noi dung da duoc cap nhat va van hop le",
     );
-    expect(reflectionDoc.emotion).toBe("sad");
-    expect(reflectionDoc.version).toBe(1);
+    expect(reflectionDoc.isPrivate).toBe(true);
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

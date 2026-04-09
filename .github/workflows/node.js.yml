@@ -63,8 +63,11 @@ jobs:
     env:
       PORT: ${{ vars.PORT || '3000' }}
       MONGO_URI: ${{ matrix.mongo_uri }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET || vars.JWT_SECRET || 'ci-jwt-secret' }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || vars.JWT_REFRESH_SECRET || 'ci-jwt-refresh-secret' }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || 'ci-google-client-id' }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET || 'ci-google-client-secret' }}
+      GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -137,8 +140,11 @@ jobs:
     env:
       PORT: ${{ vars.PORT || '3000' }}
       MONGO_URI: mongodb://127.0.0.1:27017/sel_ci_test
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET || vars.JWT_SECRET || 'ci-jwt-secret' }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || vars.JWT_REFRESH_SECRET || 'ci-jwt-refresh-secret' }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || 'ci-google-client-id' }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET || 'ci-google-client-secret' }}
+      GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback' }}
 
     steps:
       - uses: actions/checkout@v4

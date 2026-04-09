@@ -141,7 +141,7 @@ describe("Node Routes", () => {
     expect(response.status).toBe(401);
   });
 
-  test("POST /nodes should return 403 for student role", async () => {
+  test("POST /nodes should allow student role with valid payload", async () => {
     const app = buildApp();
     const token = signToken(STUDENT_ID, "student");
 
@@ -150,8 +150,8 @@ describe("Node Routes", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ courseId: VALID_COURSE_ID, title: "Day 1", order: 1 });
 
-    expect(response.status).toBe(403);
-    expect(response.body.success).toBe(false);
+    expect(response.status).toBe(201);
+    expect(response.body.success).toBe(true);
   });
 
   test("POST /nodes should return 201 for teacher with valid payload", async () => {
@@ -188,16 +188,26 @@ describe("Node Routes", () => {
 
   // ─── PUT /nodes/:id ──────────────────────────────────────────────────────────
 
-  test("PUT /nodes/:id should return 403 for student role", async () => {
+  test("PUT /nodes/:id should allow student update", async () => {
     const app = buildApp();
     const token = signToken(STUDENT_ID, "student");
+    const saveMock = jest.fn().mockResolvedValue(undefined);
+
+    Node.findById.mockResolvedValue({
+      _id: VALID_NODE_ID,
+      courseId: VALID_COURSE_ID,
+      title: "Day 1",
+      order: 1,
+      save: saveMock,
+    });
 
     const response = await request(app)
       .put(`/nodes/${VALID_NODE_ID}`)
       .set("Authorization", `Bearer ${token}`)
       .send({ title: "Updated" });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
+    expect(saveMock).toHaveBeenCalledTimes(1);
   });
 
   test("PUT /nodes/:id should return 200 for teacher update", async () => {
@@ -226,15 +236,22 @@ describe("Node Routes", () => {
 
   // ─── DELETE /nodes/:id ───────────────────────────────────────────────────────
 
-  test("DELETE /nodes/:id should return 403 for student role", async () => {
+  test("DELETE /nodes/:id should allow student delete", async () => {
     const app = buildApp();
     const token = signToken(STUDENT_ID, "student");
+    const deleteOneMock = jest.fn().mockResolvedValue({ deletedCount: 1 });
+
+    Node.findById.mockResolvedValue({
+      _id: VALID_NODE_ID,
+      deleteOne: deleteOneMock,
+    });
 
     const response = await request(app)
       .delete(`/nodes/${VALID_NODE_ID}`)
       .set("Authorization", `Bearer ${token}`);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(200);
+    expect(deleteOneMock).toHaveBeenCalledTimes(1);
   });
 
   test("DELETE /nodes/:id should return 200 for teacher delete", async () => {
