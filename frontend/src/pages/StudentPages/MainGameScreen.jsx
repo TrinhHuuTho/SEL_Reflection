@@ -118,26 +118,56 @@ function MainGameScreen() {
                 node={activeNode}
             />
 
-            {/* Header: Title & Back Button */}
-            <div className="w-full max-w-6xl mx-auto px-4 z-50 flex items-center justify-between mb-4 relative">
+            {/* Gamification Header: Back Button, Title, Stats */}
+            <div className="w-full max-w-6xl mx-auto px-4 z-50 flex flex-col md:flex-row items-center justify-between mb-8 relative gap-4 md:gap-0">
+                
+                {/* Back Button */}
                 <button
                     onClick={() => navigate('/')}
-                    className="bg-white/80 hover:bg-white text-gray-700 px-4 py-2 rounded-xl font-bold backdrop-blur-sm shadow-sm transition-all flex items-center gap-2"
+                    className="bg-white/90 hover:bg-white text-gray-700 px-5 py-2.5 rounded-2xl font-bold backdrop-blur-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 border-2 border-gray-100 self-start md:self-auto"
                 >
-                    ⬅️ Quay lại
+                    ⬅️<span className="hidden sm:inline"> Quay lại</span>
                 </button>
 
-                <h1 className="text-4xl font-black text-brand-primary drop-shadow-lg tracking-wide text-center absolute left-1/2 -translate-x-1/2 w-full pointer-events-none uppercase">
+                {/* Title */}
+                <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary drop-shadow-sm tracking-wide text-center uppercase absolute left-1/2 -translate-x-1/2 pointer-events-none hidden md:block">
                     {journey?.title || "HÀNH TRÌNH TRI THỨC"}
                 </h1>
 
-                {/* Placeholder for right side balance */}
-                <div className="w-24"></div>
+                {/* Stats (Streak & Gems Mock) */}
+                <div className="flex items-center gap-3 self-end md:self-auto">
+                    <div className="flex items-center gap-1.5 bg-orange-100 px-4 py-2 rounded-2xl border-2 border-orange-200 shadow-sm cursor-help hover:scale-105 transition-transform">
+                        <span className="text-2xl animate-pulse">🔥</span>
+                        <span className="font-extrabold text-orange-600">3 Ngày</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-blue-100 px-4 py-2 rounded-2xl border-2 border-blue-200 shadow-sm cursor-help hover:scale-105 transition-transform">
+                        <span className="text-2xl animate-bounce">💎</span>
+                        <span className="font-extrabold text-brand-primary">1,500</span>
+                    </div>
+                </div>
             </div>
 
-            <p className="text-gray-600 font-medium z-50 bg-white/80 px-4 py-1 rounded-full backdrop-blur-sm shadow mb-4">
-                Đã hoàn thành: <span className="font-bold text-brand-primary">{Math.min(progress.current - 1, progress.total)}/{progress.total}</span> chặng Hành Trình
-            </p>
+            {/* Title for Mobile */}
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary drop-shadow-sm tracking-wide text-center uppercase md:hidden mb-4 px-4">
+                {journey?.title || "HÀNH TRÌNH TRI THỨC"}
+            </h1>
+
+            {/* Gamified Progress Bar */}
+            <div className="w-full max-w-xl mx-auto z-50 px-6 mb-8">
+                <div className="flex justify-between text-sm font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <span>Hành trình</span>
+                    <span className="text-brand-primary">{Math.min(progress.current - 1, progress.total)} / {progress.total} chặng</span>
+                </div>
+                <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner border border-gray-300">
+                    <div 
+                        className="h-full bg-gradient-to-r from-green-400 to-brand-accent rounded-full transition-all duration-1000 ease-out relative"
+                        style={{ width: `${(Math.min(progress.current - 1, progress.total) / progress.total) * 100}%` }}
+                    >
+                        {/* Shimmer effect inside progress bar */}
+                        <div className="absolute top-0 left-0 right-0 bottom-0 bg-white/20 w-full animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
 
             {/* Map Container */}
             <div className="w-full h-full z-10 mt-8">

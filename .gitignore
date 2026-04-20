@@ -6,3 +6,6 @@
 
 # Ignore Python virtual environments
 .venv/
+
+# Ignore implementation plans
+implementation.plan

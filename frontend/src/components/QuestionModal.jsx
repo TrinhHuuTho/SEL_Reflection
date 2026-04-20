@@ -1,5 +1,27 @@
 import { useState, useEffect } from 'react';
 import { createReflection, getReflectionsByNode } from '../services/reflectionService';
+import { motion, AnimatePresence } from 'framer-motion';
+import Confetti from 'react-confetti';
+
+const TypingText = ({ text, speed = 30 }) => {
+    const [displayedText, setDisplayedText] = useState("");
+
+    useEffect(() => {
+        setDisplayedText("");
+        let i = 0;
+        const timer = setInterval(() => {
+            if (i < text.length) {
+                setDisplayedText((prev) => prev + text.charAt(i));
+                i++;
+            } else {
+                clearInterval(timer);
+            }
+        }, speed);
+        return () => clearInterval(timer);
+    }, [text, speed]);
+
+    return <span>{displayedText}</span>;
+};
 
 const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
     const [step, setStep] = useState(0); // 0: Hidden, 1: Opening, 2: Open-Ended Question, 3: Success
@@ -11,6 +33,20 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
     // States for Peer Answers (Right Side)
     const [peerAnswers, setPeerAnswers] = useState([]);
     const [isLoadingPeers, setIsLoadingPeers] = useState(false);
+
+    // States for Confetti dimensions
+    const [windowSize, setWindowSize] = useState({
+        width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+        height: typeof window !== 'undefined' ? window.innerHeight : 800,
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -124,30 +160,76 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
 
                     {step === 3 ? (
                         // SUCCESS VIEW
-                        <div className="flex-1 flex flex-col items-center justify-center text-center animate-bounce-short">
-                            <div className="text-8xl mb-6">🎉💎🎁</div>
-                            <h2 className="text-3xl font-black text-brand-primary mb-4">Tuyệt vời!</h2>
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", bounce: 0.5 }}
+                            className="flex-1 flex flex-col items-center justify-center text-center relative"
+                        >
+                            <Confetti
+                                width={windowSize.width}
+                                height={windowSize.height}
+                                recycle={false}
+                                numberOfPieces={500}
+                                gravity={0.15}
+                                style={{ position: 'fixed', top: 0, left: 0, zIndex: 110, pointerEvents: 'none' }}
+                            />
+                            <motion.div 
+                                animate={{ y: [0, -20, 0] }} 
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className="text-8xl mb-6 drop-shadow-2xl"
+                            >
+                                💎🎁
+                            </motion.div>
+                            <h2 className="text-4xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-500">Tuyệt vời!</h2>
                             <p className="text-xl font-medium text-gray-600 mb-8 max-w-md">
-                                Cảm ơn bạn đã chia sẻ suy nghĩ. Bạn đã nhận được một mảnh kho báu!
+                                Cảm ơn bạn đã chia sẻ suy nghĩ. Chúc mừng bạn đã nhận được <span className="font-bold text-orange-500">+50 EXP</span> và <span className="font-bold text-blue-500">100 💎 Gems</span>!
                             </p>
                             <button
                                 onClick={handleClose}
-                                className="px-10 py-4 bg-brand-secondary hover:bg-teal-400 text-white text-xl font-bold rounded-2xl shadow-xl shadow-teal-500/30 transition-transform active:scale-95"
+                                className="px-10 py-4 bg-gradient-to-r from-brand-secondary to-blue-500 hover:from-teal-400 hover:to-blue-600 text-white text-xl font-bold rounded-2xl shadow-xl shadow-teal-500/30 transition-transform hover:scale-105 active:scale-95 flex items-center gap-2"
                             >
                                 Tiếp tục hành trình ➡️
                             </button>
-                        </div>
+                        </motion.div>
                     ) : (
                         // QUESTION VIEW
                         <div className="flex-1 flex flex-col">
-                            <div className="mb-4">
-                                <span className="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-bold mb-4">
-                                    THỬ THÁCH SUY NGẪM #{node?.order || 1}
-                                </span>
-                                <h2 className="text-3xl md:text-4xl font-extrabold text-gray-800 leading-tight">
-                                    {node?.title || "Câu hỏi bí ẩn!"}
-                                </h2>
-                                <p className="text-gray-500 mt-2 font-medium">{node?.description}</p>
+                            {/* Chức năng Gamification: Mascot + Bubble Chat (TypeIt) */}
+                            <div className="mb-6 flex flex-col sm:flex-row items-center sm:items-end gap-4 relative min-h-[7rem]">
+                                {/* Mascot Placeholder */}
+                                <motion.div 
+                                    initial={{ y: 50, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    whileHover={{ scale: 1.1, rotate: [-5, 5, -5, 0] }}
+                                    className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-amber-300 to-orange-400 rounded-3xl border-4 border-white shadow-lg overflow-hidden flex flex-col items-center justify-end flex-shrink-0 cursor-pointer"
+                                    title="Trợ lý ảo học tập"
+                                >
+                                     {/* Simple robot/animal face using CSS */}
+                                     <div className="bg-white w-12 h-10 sm:w-14 sm:h-12 rounded-xl mb-2 flex items-center justify-evenly border-2 border-orange-500 shadow-inner relative">
+                                         <div className="w-2.5 h-3 bg-black rounded-full animate-bounce"></div>
+                                         <div className="w-2.5 h-3 bg-black rounded-full animate-bounce delay-75"></div>
+                                         <div className="absolute bottom-1 w-4 h-1 bg-pink-300 rounded-full"></div>
+                                     </div>
+                                </motion.div>
+
+                                {/* Speech Bubble */}
+                                <div className="flex-1 bg-blue-50 p-4 rounded-2xl sm:rounded-bl-none shadow relative border border-blue-100 min-h-[5rem] flex items-center w-full">
+                                    <div className="hidden sm:block absolute -left-3 bottom-4 w-0 h-0 border-t-[10px] border-t-transparent border-r-[15px] border-r-blue-100 border-b-[10px] border-b-transparent"></div>
+                                    <div className="hidden sm:block absolute -left-2 bottom-[17px] w-0 h-0 border-t-[9px] border-t-transparent border-r-[14px] border-r-blue-50 border-b-[9px] border-b-transparent"></div>
+                                    
+                                    <div className="text-gray-700 font-bold text-base sm:text-lg w-full leading-snug">
+                                        <span className="text-brand-primary text-xs uppercase font-black block mb-1">
+                                            THỬ THÁCH SUY NGẪM #{node?.order || 1}
+                                        </span>
+                                        {step === 2 && (
+                                            <TypingText 
+                                                text={node?.title || "Bạn ơi, hãy giúp mình trả lời câu hỏi bí ẩn này nhé! Cùng cố gắng nha!"} 
+                                                speed={30} 
+                                            />
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex-1 flex flex-col space-y-6 overflow-y-auto pr-2 custom-scrollbar">
@@ -166,7 +248,7 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
                                         
                                         <div className="relative flex-1 flex flex-col">
                                             <textarea
-                                                className="w-full flex-1 p-5 bg-white border-2 border-gray-200 rounded-2xl text-lg text-gray-700 font-medium focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 transition-all resize-none shadow-inner min-h-[160px]"
+                                                className="w-full flex-1 p-5 bg-white border-2 border-gray-200 rounded-2xl text-lg text-gray-700 font-medium focus:outline-none focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 transition-all resize-none shadow-inner min-h-[160px] relative z-10"
                                                 placeholder="Bắt đầu chia sẻ suy nghĩ của bạn tại đây..."
                                                 value={answers[currentQIdx] || ""}
                                                 onChange={(e) => {
@@ -177,8 +259,22 @@ const QuestionModal = ({ isOpen, onClose, onComplete, node }) => {
                                                 disabled={isSubmitting}
                                             ></textarea>
                                             
+                                            {/* Micro-interaction: Animated Sparkles khi học sinh gõ nhiều chữ */}
+                                            <AnimatePresence>
+                                                {(answers[currentQIdx] && answers[currentQIdx].length > 50) && (
+                                                    <motion.div 
+                                                        initial={{ opacity: 0, y: 15, scale: 0.8 }}
+                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.8 }}
+                                                        className="absolute -top-3 right-4 bg-gradient-to-r from-yellow-300 to-yellow-400 text-yellow-900 text-xs font-black px-3 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1.5 border border-yellow-200"
+                                                    >
+                                                        ✨ Viết hay lắm! Tiếp tục nào!
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                            
                                             {/* Hint tooltip */}
-                                            <div className="absolute bottom-4 right-4 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 opacity-70 pointer-events-none">
+                                            <div className="absolute bottom-4 right-4 text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm opacity-90 pointer-events-none z-20">
                                                 Không có đáp án đúng/sai
                                             </div>
                                         </div>
