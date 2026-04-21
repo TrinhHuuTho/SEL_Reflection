@@ -43,8 +43,16 @@ const LoginScreen = ({ onLogin }) => {
         setIsLoading(true);
 
         try {
-            // Gọi API thực tế
-            const response = await logIn(email, password);
+            // Tạo một promise bị reject sau 10 giây để làm Timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('TIMEOUT_ERROR')), 10000);
+            });
+
+            // Gọi API thực tế chạy đua với thời gian timeout
+            const response = await Promise.race([
+                logIn(email, password),
+                timeoutPromise
+            ]);
             
             // Xử lý khi đăng nhập thành công
             if (response.success) {
@@ -64,8 +72,12 @@ const LoginScreen = ({ onLogin }) => {
                  setError(response.message || 'Đăng nhập không thành công.');
             }
         } catch (err) {
+            // Xử lý lỗi Timeout
+            if (err.message === 'TIMEOUT_ERROR') {
+                setError('Máy chủ phản hồi quá lâu (Timeout). Vui lòng thử lại sau!');
+            }
             // Server báo lỗi 401, 400 hoặc hệ thống chết
-            if (err.response && err.response.data && err.response.data.message) {
+            else if (err.response && err.response.data && err.response.data.message) {
                 setError(err.response.data.message);
             } else {
                 setError('Email hoặc mật khẩu không chính xác!');
