@@ -1,21 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+
+const THEMES = [
+    'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-700 shadow-blue-200',
+    'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-700 shadow-emerald-200',
+    'bg-gradient-to-br from-purple-400 to-purple-600 border-purple-700 shadow-purple-200',
+    'bg-gradient-to-br from-rose-400 to-rose-600 border-rose-700 shadow-rose-200',
+    'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-700 shadow-amber-200',
+    'bg-gradient-to-br from-cyan-400 to-cyan-600 border-cyan-700 shadow-cyan-200',
+];
 
 const JourneyCard = ({ journey, onClick }) => {
-    // Mapping background theme to colors/gradients
-    const getThemeStyles = (theme) => {
-        switch (theme) {
-            case 'math_theme':
-                return 'bg-gradient-to-br from-blue-400 to-blue-600 border-blue-700 shadow-blue-200';
-            case 'science_theme':
-                return 'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-700 shadow-emerald-200';
-            case 'english_theme':
-                return 'bg-gradient-to-br from-purple-400 to-purple-600 border-purple-700 shadow-purple-200';
-            default:
-                return 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-700 shadow-gray-200';
-        }
-    };
-
-    const themeClass = getThemeStyles(journey.backgroundValue);
+    const themeClass = useMemo(() => {
+        if (!journey || !journey._id) return THEMES[0];
+        
+        // MongoDB ObjectId có 24 ký tự Hex. Các ký tự cuối là counter random tăng dần -> Tỷ lệ trùng cực thấp.
+        const idStr = String(journey._id);
+        const hexVal = parseInt(idStr.slice(-4), 16);
+        
+        const randomIndex = isNaN(hexVal) ? 0 : hexVal % THEMES.length;
+        return THEMES[randomIndex];
+    }, [journey]);
 
     return (
         <div

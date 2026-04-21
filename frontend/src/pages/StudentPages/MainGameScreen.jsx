@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MapPath from '../../components/MapPath';
 import QuestionModal from '../../components/QuestionModal';
@@ -21,6 +20,18 @@ function MainGameScreen() {
     const [journeyNodes, setJourneyNodes] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [activeNode, setActiveNode] = useState(null);
+
+    // Tính toán pseudo-random hash từ journeyId để chọn Layout cố định cho lớp
+    const mapVariant = useMemo(() => {
+        if (!journeyId) return 'sine';
+        
+        const idStr = String(journeyId);
+        const hexVal = parseInt(idStr.slice(-4), 16);
+        
+        const layouts = ['sine', 'zigzag', 'hills', 'random_scatter'];
+        const layoutIndex = isNaN(hexVal) ? 0 : hexVal % layouts.length;
+        return layouts[layoutIndex];
+    }, [journeyId]);
 
     useEffect(() => {
         const fetchGameData = async () => {
@@ -175,6 +186,7 @@ function MainGameScreen() {
                     totalSessions={progress.total}
                     currentSession={progress.current}
                     onNodeClick={handleNodeClick}
+                    variant={mapVariant}
                 />
             </div>
         </div>

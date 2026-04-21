@@ -1,12 +1,12 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const MapPath = ({ totalSessions = 10, currentSession = 1, onNodeClick }) => {
+const MapPath = ({ totalSessions = 10, currentSession = 1, onNodeClick, variant = 'random' }) => {
     // Cấu hình bản đồ ngang (Horizontal)
     const CONFIG = {
         HEIGHT: 500,            // Chiều cao tổng
         AMPLITUDE: 100,         // Độ uốn lượn
-        GAP: 200,               // Khoảng cách ngang
+        GAP: 200,               // Khoảng cách ngang tối thiểu
         START_X: window.innerWidth / 2,           // Bắt đầu ở giữa màn hình
         START_Y: 250,           // Trục giữa
     };
@@ -61,14 +61,46 @@ const MapPath = ({ totalSessions = 10, currentSession = 1, onNodeClick }) => {
         </div>
     );
 
-    // Sinh tọa độ các điểm (Horizontal)
+    // Thuật toán: Randomly chọn 1 kiểu
+    const activeLayout = useMemo(() => {
+        const layouts = ['sine', 'zigzag', 'hills', 'random_scatter'];
+        return variant === 'random' ? layouts[Math.floor(Math.random() * layouts.length)] : variant;
+    }, [variant]);
+
+    // Sinh tọa độ các điểm (Horizontal) với nhiều thuật toán
     const points = useMemo(() => {
-        return Array.from({ length: totalSessions }).map((_, i) => ({
-            id: i + 1,
-            x: CONFIG.START_X + i * CONFIG.GAP,
-            y: CONFIG.START_Y + Math.sin(i * 0.8) * CONFIG.AMPLITUDE * (i % 2 === 0 ? 1 : -1) * 0.5 + Math.sin(i) * CONFIG.AMPLITUDE,
-        }));
-    }, [totalSessions]);
+        return Array.from({ length: totalSessions }).map((_, i) => {
+            const id = i + 1;
+            const x = CONFIG.START_X + i * CONFIG.GAP;
+            let y = CONFIG.START_Y;
+
+            switch (activeLayout) {
+                case 'sine':
+                    // Chạy lượn đều như hình Sin
+                    y = CONFIG.START_Y + Math.sin(i * 0.8) * CONFIG.AMPLITUDE;
+                    break;
+                case 'zigzag':
+                    // Lên xuống ziczac đan xen cứng cáp
+                    y = CONFIG.START_Y + (i % 2 === 0 ? -CONFIG.AMPLITUDE : CONFIG.AMPLITUDE) * 0.8;
+                    break;
+                case 'hills':
+                    // Những ngọn đồi: lên từ từ rồi xuống từ từ (chu kỳ lớn hơn)
+                    y = CONFIG.START_Y + Math.cos(i * 0.5) * CONFIG.AMPLITUDE * 1.2;
+                    break;
+                case 'random_scatter':
+                    // Bố trí ngẫu nhiên nhẹ nhàng
+                    // Sử dụng pseudo-random dựa vào id để giữ cố định vị trí lúc render
+                    const pseudoRandom = Math.abs(Math.sin(id * 12.9898) * 43758.5453) % 1; 
+                    y = CONFIG.START_Y + (pseudoRandom * 2 - 1) * CONFIG.AMPLITUDE * 1.3;
+                    break;
+                default: 
+                    // Fallback như cũ
+                    y = CONFIG.START_Y + Math.sin(i * 0.8) * CONFIG.AMPLITUDE * (i % 2 === 0 ? 1 : -1) * 0.5 + Math.sin(i) * CONFIG.AMPLITUDE;
+            }
+
+            return { id, x, y };
+        });
+    }, [totalSessions, activeLayout]);
 
     // Update status
     const pointsWithStatus = useMemo(() => {
